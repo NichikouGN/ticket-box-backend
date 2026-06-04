@@ -1,0 +1,8 @@
+{
+  "name": "ticket-box-backend",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ]
+}
