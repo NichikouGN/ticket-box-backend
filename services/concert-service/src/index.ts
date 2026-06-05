@@ -1,32 +1,34 @@
 import express from "express";
+import morgan from "morgan";
+import concertRoutes from "./routes/concert.routes.js";
+import organizerRoutes from "./routes/organizer.routes.js";
 
 const app = express();
-const PORT = 3002;
+const PORT = Number(process.env.PORT || 3003);
 
+app.use(morgan("dev"));
 app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.json({
-    service: "API Gateway",
-    status: "running",
+const healthHandler = (req: express.Request, res: express.Response) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      service: "concert-service",
+      status: "running",
+    },
   });
+};
+
+app.get("/health", healthHandler);
+app.get("/api/v1/health", healthHandler);
+
+app.use("/api/v1", concertRoutes);
+app.use("/api/v1/organizer", organizerRoutes);
+
+app.use((req, res) => {
+  console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ success: false, message: "Not Found" });
 });
 
-import { Worker } from "bullmq";
-
-const worker = new Worker(
-  "test-queue",
-  async (job) => {
-    console.log("Processing job:", job.id, job.data);
-  },
-  {
-    connection: {
-      host: "localhost",
-      port: 6379,
-    },
-  },
-);
-
 app.listen(PORT, () => {
-  console.log(`User Service listening on ${PORT}`);
+  console.log(`Concert Service listening on ${PORT}`);
 });
