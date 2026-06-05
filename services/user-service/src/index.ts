@@ -1,27 +1,23 @@
 import express from "express";
+import authRoutes from "./routes/auth.routes.js";
+import organizerRoutes from "./routes/organizer.routes.js";
+import morgan from "morgan";
+import userRoutes from "./routes/user.routes.js";
 
 const app = express();
 const PORT = 3001;
 
+app.use(morgan("dev"));
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.json({
-    service: "user-service",
-    status: "running",
-  });
+app.use("/auth", authRoutes);
+app.use("/organizer", organizerRoutes);
+app.use("/", userRoutes);
+
+app.use((req, res) => {
+  console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ message: "Not Found" });
 });
-
-import { Queue, Worker } from "bullmq";
-
-const queue = new Queue("test-queue", {
-  connection: {
-    host: "localhost",
-    port: 6379,
-  },
-});
-
-await queue.add("test-job", { id: 1, foo: "bar" });
 
 app.listen(PORT, () => {
   console.log(`User Service listening on ${PORT}`);

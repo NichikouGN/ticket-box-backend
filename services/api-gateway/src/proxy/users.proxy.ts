@@ -5,3 +5,19 @@ export const userProxy = createProxyMiddleware({
   target: SERVICES.USER,
   changeOrigin: true,
 });
+
+export const authProxy = createProxyMiddleware({
+  target: SERVICES.USER,
+  changeOrigin: true,
+  pathRewrite: {
+    "^/": "/auth/",
+  },
+});
+
+export const organizerProxy = createProxyMiddleware({
+  target: SERVICES.USER,
+  changeOrigin: true,
+  pathRewrite: {
+    "^/": "/organizer/",
+  },
+});

@@ -1,0 +1,41 @@
+import { Knex } from "knex";
+
+export async function up(knex: Knex): Promise<void> {
+  await knex.raw(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
+
+  return knex.schema.createTable("payments", (table) => {
+    table.uuid("id").primary().defaultTo(knex.raw("gen_random_uuid()"));
+
+    table.uuid("order_id").notNullable().references("id").inTable("orders").onDelete("CASCADE");
+
+    table.uuid("user_id").notNullable().references("id").inTable("users").onDelete("CASCADE");
+
+    table.integer("amount").notNullable();
+
+    table.text("payment_method").notNullable();
+
+    table.text("idempotency_key").notNullable().unique();
+
+    table
+      .text("status")
+      .notNullable()
+      .defaultTo("pending")
+      .checkIn(["pending", "success", "failed", "expired"]);
+
+    table.text("payment_ref"); // gateway reference id
+
+    table.timestamp("created_at", { useTz: true }).defaultTo(knex.fn.now());
+
+    table.timestamp("updated_at", { useTz: true }).defaultTo(knex.fn.now());
+
+    table.index("order_id", "idx_payments_order_id");
+    table.index("user_id", "idx_payments_user_id");
+    table.index("status", "idx_payments_status");
+    table.index("payment_ref", "idx_payments_payment_ref");
+    table.index("created_at", "idx_payments_created_at");
+  });
+}
+
+export async function down(knex: Knex): Promise<void> {
+  return knex.schema.dropTableIfExists("payments");
+}

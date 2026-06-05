@@ -4,5 +4,13 @@
   "workspaces": [
     "packages/*",
     "services/*"
-  ]
+  ],
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "knex": "^3.2.10",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
 }
