@@ -35,17 +35,20 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 export const updateUserRole = async (req: Request, res: Response) => {
   try {
-    const parsed = updateUserRoleSchema.safeParse({ ...req.params, ...req.body, ...req.user });
+    const parsed = updateUserRoleSchema.safeParse({ ...req.params, ...req.body });
     if (!parsed.success) {
       return res
         .status(400)
         .json({ success: false, message: parsed.error.issues[0]?.message ?? "Invalid input" });
     }
 
-    const { targetId, userId, role } = parsed.data;
+    const { targetId, role } = parsed.data;
+    const userId = req.user?.userId;
 
-    const updatedUser = await OrganizerService.updateUserRole({ userId, targetId, role });
-    return res.status(200).json({ success: true, data: updatedUser });
+    const updatedUser = await OrganizerService.updateUserRole(userId, targetId, role);
+    return res
+      .status(200)
+      .json({ success: true, message: "User role updated successfully", data: updatedUser });
   } catch (err) {
     console.log("AppError:", err);
     if (err instanceof AppError) {
@@ -57,17 +60,20 @@ export const updateUserRole = async (req: Request, res: Response) => {
 
 export const updateUserStatus = async (req: Request, res: Response) => {
   try {
-    const parsed = updateUserStatusSchema.safeParse({ ...req.params, ...req.body, ...req.user });
+    const parsed = updateUserStatusSchema.safeParse({ ...req.params, ...req.body });
     if (!parsed.success) {
       return res
         .status(400)
         .json({ success: false, message: parsed.error.issues[0]?.message ?? "Invalid input" });
     }
 
-    const { targetId, userId, status } = parsed.data;
+    const { targetId, status } = parsed.data;
+    const userId = req.user?.userId;
 
-    const updatedUser = await OrganizerService.updateUserStatus({ userId, targetId, status });
-    return res.status(200).json({ success: true, data: updatedUser });
+    const updatedUser = await OrganizerService.updateUserStatus(userId, targetId, status);
+    return res
+      .status(200)
+      .json({ success: true, message: "User status updated successfully", data: updatedUser });
   } catch (err) {
     console.log("AppError:", err);
     if (err instanceof AppError) {

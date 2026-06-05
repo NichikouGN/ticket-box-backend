@@ -26,7 +26,7 @@ export const OrganizerService = {
     return result;
   },
 
-  updateUserRole: async ({ userId, targetId, role }: UpdateUserRoleInput) => {
+  updateUserRole: async (userId: string, targetId: string, role: role) => {
     if (!userId) {
       throw new AppError("User ID is required", 400);
     }
@@ -43,7 +43,7 @@ export const OrganizerService = {
     return updatedUser;
   },
 
-  updateUserStatus: async ({ userId, targetId, status }: UpdateUserStatusInput) => {
+  updateUserStatus: async (userId: string, targetId: string, status: status) => {
     if (!userId) {
       throw new AppError("User ID is required", 400);
     }

@@ -69,7 +69,7 @@ export const UserRepository = {
 
     const updatedUser = await db("users")
       .where("id", userId)
-      .select("id", "email", "full_name", "role")
+      .select("id", "email", "full_name", "role", "status")
       .first();
     return updatedUser;
   },

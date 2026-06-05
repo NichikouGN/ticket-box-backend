@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const uuidParamSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 export const listQuerySchema = z.object({
@@ -10,14 +10,14 @@ export const listQuerySchema = z.object({
 });
 
 export const signUpSchema = z.object({
-  fullName: z.string().min(1),
-  email: z.string().email(),
-  password: z.string().min(6),
+  fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
 });
 
 export const signInSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
 });
 
 export const listUsersQuerySchema = listQuerySchema.extend({
@@ -26,19 +26,25 @@ export const listUsersQuerySchema = listQuerySchema.extend({
 });
 
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1),
+  refreshToken: z.string().min(1, "Refresh token is required"),
 });
 
 export const updateUserRoleSchema = z.object({
-  targetId: z.string().uuid(),
-  userId: z.string().uuid(),
-  role: z.enum(["ORGANIZER", "STAFF", "AUDIENCE"]),
+  targetId: z.uuid({ error: "Invalid target ID" }),
+  role: z
+    .enum(["ORGANIZER", "STAFF", "AUDIENCE"], {
+      error: "Invalid role, must be one of ORGANIZER, STAFF, or AUDIENCE",
+    })
+    .describe("The role to update the user to"),
 });
 
 export const updateUserStatusSchema = z.object({
-  targetId: z.string().uuid(),
-  userId: z.string().uuid(),
-  status: z.enum(["ACTIVE", "BANNED", "INACTIVE"]),
+  targetId: z.uuid({ error: "Invalid target ID" }),
+  status: z
+    .enum(["ACTIVE", "BANNED", "INACTIVE"], {
+      error: "Invalid status, must be one of ACTIVE, BANNED, or INACTIVE",
+    })
+    .describe("The status to update the user to"),
 });
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
