@@ -20,16 +20,25 @@ export const signInSchema = z.object({
   password: z.string().min(6),
 });
 
+export const listUsersQuerySchema = listQuerySchema.extend({
+  status: z.enum(["ACTIVE", "BANNED", "INACTIVE"]).optional(),
+  role: z.enum(["ORGANIZER", "STAFF", "AUDIENCE"]).optional(),
+});
+
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1),
 });
 
 export const updateUserRoleSchema = z.object({
+  targetId: z.string().uuid(),
+  userId: z.string().uuid(),
   role: z.enum(["ORGANIZER", "STAFF", "AUDIENCE"]),
 });
 
 export const updateUserStatusSchema = z.object({
-  status: z.enum(["ACTIVE", "BANNED", "DELETED"]),
+  targetId: z.string().uuid(),
+  userId: z.string().uuid(),
+  status: z.enum(["ACTIVE", "BANNED", "INACTIVE"]),
 });
 
 export type SignUpInput = z.infer<typeof signUpSchema>;

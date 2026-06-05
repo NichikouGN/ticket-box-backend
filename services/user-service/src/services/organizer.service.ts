@@ -2,6 +2,7 @@ import { UserRepository } from "../repository/user.repository.js";
 import { AppError } from "../types/appError.types.js";
 import { validate as isUuid } from "uuid";
 import type { role, status } from "../types/auth.types.js";
+import type { UpdateUserRoleInput, UpdateUserStatusInput } from "../types/user.types.js";
 
 export const OrganizerService = {
   getAllUsers: async ({
@@ -25,21 +26,13 @@ export const OrganizerService = {
     return result;
   },
 
-  updateUserRole: async (userId: string, targetId: string, role: role) => {
+  updateUserRole: async ({ userId, targetId, role }: UpdateUserRoleInput) => {
     if (!userId) {
       throw new AppError("User ID is required", 400);
     }
 
-    if (!isUuid(targetId)) {
-      throw new AppError("Invalid target ID format", 400);
-    }
-
     if (userId === targetId) {
       throw new AppError("You cannot change your own role", 400);
-    }
-
-    if (!["AUDIENCE", "STAFF", "ORGANIZER"].includes(role)) {
-      throw new AppError("Invalid role provided (must be AUDIENCE, STAFF, or ORGANIZER)", 400);
     }
 
     const updatedUser = await UserRepository.updateUserRole(targetId, role);
@@ -50,21 +43,13 @@ export const OrganizerService = {
     return updatedUser;
   },
 
-  updateUserStatus: async (userId: string, targetId: string, status: status) => {
+  updateUserStatus: async ({ userId, targetId, status }: UpdateUserStatusInput) => {
     if (!userId) {
       throw new AppError("User ID is required", 400);
     }
 
-    if (!isUuid(targetId)) {
-      throw new AppError("Invalid target ID format", 400);
-    }
-
     if (userId === targetId) {
       throw new AppError("You cannot change your own status", 400);
-    }
-
-    if (!["ACTIVE", "INACTIVE", "BANNED"].includes(status)) {
-      throw new AppError("Invalid status provided (must be ACTIVE, INACTIVE, or BANNED)", 400);
     }
 
     const updatedUser = await UserRepository.updateUserStatus(targetId, status);
