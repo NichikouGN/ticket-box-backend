@@ -1,21 +1,27 @@
 GET http://localhost:3000/api/v1/concerts
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ3MTYwLCJleHAiOjE3ODA3NDgwNjB9.WSQfbqah2loNVNIFc156um7cI0nlcfaavxFlNf44JIs
 ###
-GET http://localhost:3000/api/v1/concerts/8a1b2c3d-4e5f-4a6b-8c9d-000000000001/tickets
+GET http://localhost:3000/api/v1/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ3MTYwLCJleHAiOjE3ODA3NDgwNjB9.WSQfbqah2loNVNIFc156um7cI0nlcfaavxFlNf44JIs
 ###
-GET http://localhost:3000/api/v1/concerts/8a1b2c3d-4e5f-4a6b-8c9d-000000000001/stock
+GET http://localhost:3000/api/v1/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9/tickets
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ3MTYwLCJleHAiOjE3ODA3NDgwNjB9.WSQfbqah2loNVNIFc156um7cI0nlcfaavxFlNf44JIs
+###
+GET http://localhost:3000/api/v1/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9/stock
+# Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ3MTYwLCJleHAiOjE3ODA3NDgwNjB9.WSQfbqah2loNVNIFc156um7cI0nlcfaavxFlNf44JIs
 ###
 POST http://localhost:3000/api/v1/organizer/concerts/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM1ODA3LCJleHAiOjE3ODA3MzY3MDd9.FA6vmt8t-xSr2gaD3nREi8q5yZaK-UWaK_pufX_GJhQ 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ3MTYwLCJleHAiOjE3ODA3NDgwNjB9.WSQfbqah2loNVNIFc156um7cI0nlcfaavxFlNf44JIs
 
 {
-    "title": "Rocking Beats Festival",
-    "description": "Join us for an unforgettable night of rock music with top bands from around the world. Experience electrifying performances, great food, and a vibrant atmosphere. Don't miss out on the ultimate rock music festival of the year!",
-    "artists": ["The Rockers", "Electric Pulse", "The Thunderbolts"],
+    "title": "Pop Music Extravaganza",
+    "description": "Join us for an unforgettable night of pop music with top artists from around the world. Experience electrifying performances, great food, and a vibrant atmosphere. Don't miss out on the ultimate pop music festival of the year!",
+    "artists": ["The Pop Stars", "Electric Pulse", "The Thunderbolts"],
     "venue": "Madison Square Garden, New York",
     "start_time": "2024-12-15T19:00:00Z",
-    "thumbnail_url": "https://example.com/thumbnails/rocking-beats-festival.jpg",
-    "seat_map_svg_url": "https://example.com/seatmaps/rocking-beats-festival.svg",
+    "thumbnail_url": "https://example.com/thumbnails/pop-music-extravaganza.jpg",
+    "seat_map_svg_url": "https://example.com/seatmaps/pop-music-extravaganza.svg",
     "ticket_types": [
         {
             "name": "General Admission",
@@ -38,14 +44,22 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZ
     ]
 }
 ###
-PATCH http://localhost:3000/api/v1/organizer/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9
+PATCH http://localhost:3000/api/v1/organizer/concerts/0afae19e-d982-4a4a-b065-5d243353497a
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM2NDAyLCJleHAiOjE3ODA3MzczMDJ9.I-m82tdojfknKp-VV5lUM6vOi0jp_fKsU33lfMrKolo 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ3MTYwLCJleHAiOjE3ODA3NDgwNjB9.WSQfbqah2loNVNIFc156um7cI0nlcfaavxFlNf44JIs
 
 {
-    "start_time": "2026-12-15T20:00:00Z"
+    "event_date": "2027-12-15T20:00:00Z"
 }
 ###
 PATCH http://localhost:3000/api/v1/organizer/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9/cancel
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM2NDAyLCJleHAiOjE3ODA3MzczMDJ9.I-m82tdojfknKp-VV5lUM6vOi0jp_fKsU33lfMrKolo 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ4MTEwLCJleHAiOjE3ODA3NDkwMTB9.mGo5LlmzZ0e8FbBtZR_KPbA0tjvSn4MkfGWyRhf9igY
+###
+PATCH http://localhost:3000/api/v1/organizer/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9/publish
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ3MTYwLCJleHAiOjE3ODA3NDgwNjB9.WSQfbqah2loNVNIFc156um7cI0nlcfaavxFlNf44JIs
+###
+PATCH http://localhost:3000/api/v1/organizer/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9/restore
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzQ3MTYwLCJleHAiOjE3ODA3NDgwNjB9.WSQfbqah2loNVNIFc156um7cI0nlcfaavxFlNf44JIs

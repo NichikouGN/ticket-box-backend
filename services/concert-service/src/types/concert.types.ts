@@ -18,16 +18,18 @@ const ticketTypeSchema = z.object({
   sale_end: z.string().datetime().optional().nullable(),
 });
 
-export const createConcertSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional().nullable(),
-  artists: z.array(z.string().min(1)).min(1),
-  venue: z.string().min(1),
-  start_time: z.string().datetime(),
-  thumbnail_url: z.string().url().optional().nullable(),
-  seat_map_svg_url: z.string().url().optional().nullable(),
-  ticket_types: z.array(ticketTypeSchema).min(1),
-});
+export const createConcertSchema = z
+  .object({
+    title: z.string().min(1),
+    description: z.string().optional().nullable(),
+    artists: z.array(z.string().min(1)).min(1),
+    venue: z.string().min(1),
+    event_date: z.string().datetime(),
+    thumbnail_url: z.string().url().optional().nullable(),
+    seat_map_svg_url: z.string().url().optional().nullable(),
+    ticket_types: z.array(ticketTypeSchema).min(1),
+  })
+  .strict();
 
 export const updateConcertSchema = createConcertSchema.partial().extend({
   ticket_types: z.array(ticketTypeSchema).optional(),
@@ -46,7 +48,7 @@ export type ConcertListItem = {
   title: string;
   artists: string[];
   venue: string;
-  startTime: string;
+  eventDate: string;
   status: string;
   thumbnailUrl: string | null;
 };
@@ -57,7 +59,7 @@ export type ConcertDetail = {
   description: string | null;
   artists: string[];
   venue: string;
-  startTime: string;
+  eventDate: string;
   thumbnailUrl: string | null;
   seatMapSvgUrl: string | null;
 };

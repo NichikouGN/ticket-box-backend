@@ -24,7 +24,7 @@ export async function up(knex: Knex): Promise<void> {
       .text("status")
       .notNullable()
       .defaultTo("draft")
-      .checkIn(["draft", "upcoming", "published", "cancelled"]);
+      .checkIn(["draft", "published", "cancelled"]);
 
     table.timestamp("created_at", { useTz: true }).defaultTo(knex.fn.now());
 

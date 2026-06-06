@@ -11,7 +11,7 @@ Content-Type: application/json
 
 {
   "email": "newuser@example.com",
-  "password": "password123"
+  "password": "123456"
 }
 
 ###
@@ -19,9 +19,9 @@ POST http://localhost:3000/api/v1/auth/sign-up
 Content-Type: application/json
 
 {
-  "email": "Nichikou",
-  "password": "123",
-  "fullName": "Nichikou"
+  "email": "newuser@example.com",
+  "password": "123456",
+  "fullName": "New User"
 }
 
 ###
@@ -29,22 +29,22 @@ POST http://localhost:3000/api/v1/auth/refresh-token
 Content-Type: application/json
 
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM1NzkwLCJleHAiOjE3ODEzNDA1OTB9.-y1P4TzoDAWu8zpP3qWADaDT7d2_viDolWOtoJlXbK4"
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM4NjA4LCJleHAiOjE3ODEzNDM0MDh9.2L_0L3Vsb3FQ1ZOGLS-pa9noJSM8RqtDrGPnhUjkpgI"
 }
 
 ###
-PATCH http://localhost:3000/api/v1/organizer/users/3f2d2f6a-6c2b-4b2f-9c5a-111111111111/role
+PATCH http://localhost:3000/api/v1/organizer/users/62d6634d-8d9f-4e32-ac8e-5e77037a72b2/role
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3MDg5MWRmZi0zYmVlLTQwZGEtOTkxZi04ZDFlNzMyZGE3YTgiLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNjY2MjcxLCJleHAiOjE3ODA2NjcxNzF9.xSu35WOI42ks3iqXVSfq8akYQ7p3NVZeRaBiE7VpgiM 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM3Mzk2LCJleHAiOjE3ODA3MzgyOTZ9.gWDzMTppYL3C179ZapG0wrKcjoaO7a1QPDkTBFBTR60
 
 {
-  "role": "AUDIENCE"
+  "role": "ORGANIZER"
 }
 
 ###
-PATCH http://localhost:3000/api/v1/organizer/users/3f2d2f6a-6c2b-4b2f-9c5a-111111111111/status
+PATCH http://localhost:3000/api/v1/organizer/users/62d6634d-8d9f-4e32-ac8e-5e77037a72b2/status
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3MDg5MWRmZi0zYmVlLTQwZGEtOTkxZi04ZDFlNzMyZGE3YTgiLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNjY2MjcxLCJleHAiOjE3ODA2NjcxNzF9.xSu35WOI42ks3iqXVSfq8akYQ7p3NVZeRaBiE7VpgiM 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM3Mzk2LCJleHAiOjE3ODA3MzgyOTZ9.gWDzMTppYL3C179ZapG0wrKcjoaO7a1QPDkTBFBTR60
 
 {
   "status": "BANNED"
@@ -53,9 +53,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3MDg5M
 ###
 GET http://localhost:3000/api/v1/organizer/users
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3MDg5MWRmZi0zYmVlLTQwZGEtOTkxZi04ZDFlNzMyZGE3YTgiLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNjY2NjM2LCJleHAiOjE3ODA2Njc1MzZ9.ebdU0kZxwvLxS1w76C-_gvWxFMevi0gZVj9REeaybrQ 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM3Mzk2LCJleHAiOjE3ODA3MzgyOTZ9.gWDzMTppYL3C179ZapG0wrKcjoaO7a1QPDkTBFBTR60
 
 ###
 GET http://localhost:3000/api/v1/users/profile
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3MDg5MWRmZi0zYmVlLTQwZGEtOTkxZi04ZDFlNzMyZGE3YTgiLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNjY2NjM2LCJleHAiOjE3ODA2Njc1MzZ9.ebdU0kZxwvLxS1w76C-_gvWxFMevi0gZVj9REeaybrQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM3Mzk2LCJleHAiOjE3ODA3MzgyOTZ9.gWDzMTppYL3C179ZapG0wrKcjoaO7a1QPDkTBFBTR60

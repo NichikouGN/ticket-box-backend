@@ -1,15 +1,18 @@
 import { AuthService } from "../services/auth.service.js";
 import { AppError } from "../types/appError.types.js";
 import type { Request, Response } from "express";
+import { signInSchema, signUpSchema, refreshTokenSchema } from "../types/user.types.js";
 
 export const signup = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, password } = req.body;
-    console.log("Signup request received with email:", email);
-    console.log("Signup request received with fullName:", fullName);
-    console.log("Signup request received with password:", password);
-
-    await AuthService.signup(email, password, fullName);
+    const parssed = signUpSchema.safeParse(req.body);
+    if (!parssed.success) {
+      return res
+        .status(400)
+        .json({ success: false, message: parssed.error.issues[0]?.message ?? "Invalid input" });
+    }
+    const { email, password, fullName } = parssed.data;
+    await AuthService.signup({ email, password, fullName });
 
     return res
       .status(201)
@@ -25,9 +28,15 @@ export const signup = async (req: Request, res: Response) => {
 
 export const signin = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const parssed = signInSchema.safeParse(req.body);
+    if (!parssed.success) {
+      return res
+        .status(400)
+        .json({ success: false, message: parssed.error.issues[0]?.message ?? "Invalid input" });
+    }
+    const { email, password } = parssed.data;
 
-    const result = await AuthService.signin(email, password);
+    const result = await AuthService.signin({ email, password });
 
     return res.status(200).json({
       success: true,
@@ -46,9 +55,14 @@ export const signin = async (req: Request, res: Response) => {
 
 export const requestNewAccessToken = async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
-
-    const result = await AuthService.refreshAccessToken(refreshToken);
+    const parsed = refreshTokenSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ success: false, message: parsed.error.issues[0]?.message ?? "Invalid input" });
+    }
+    const { refreshToken } = parsed.data;
+    const result = await AuthService.refreshAccessToken({ refreshToken });
 
     return res.status(200).json({
       success: true,

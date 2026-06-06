@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { AppError } from "../types/appError.types.js";
-import { ConcertService } from "../services/concert.service.js";
+import { OrganizerService } from "../services/organizer.service.js";
 import {
   cancelConcertSchema,
   createConcertSchema,
@@ -12,12 +12,10 @@ export const createConcert = async (req: Request, res: Response) => {
   try {
     const parsedBody = createConcertSchema.safeParse(req.body);
     if (!parsedBody.success) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: parsedBody.error.issues[0]?.message ?? "Invalid request body",
-        });
+      return res.status(400).json({
+        success: false,
+        message: parsedBody.error.issues[0]?.message ?? "Invalid request body",
+      });
     }
 
     const organizerId = req.user?.userId;
@@ -25,7 +23,7 @@ export const createConcert = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const result = await ConcertService.createConcert(parsedBody.data, organizerId);
+    const result = await OrganizerService.createConcert(parsedBody.data, organizerId);
     return res.status(201).json({
       success: true,
       message: "Concert created successfully",
@@ -49,15 +47,13 @@ export const updateConcert = async (req: Request, res: Response) => {
 
     const parsedBody = updateConcertSchema.safeParse(req.body);
     if (!parsedBody.success) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: parsedBody.error.issues[0]?.message ?? "Invalid request body",
-        });
+      return res.status(400).json({
+        success: false,
+        message: parsedBody.error.issues[0]?.message ?? "Invalid request body",
+      });
     }
 
-    await ConcertService.updateConcert(parsedParams.data.id, parsedBody.data);
+    await OrganizerService.updateConcert(parsedParams.data.id, parsedBody.data);
     return res.status(200).json({
       success: true,
       message: "Concert updated successfully",
@@ -80,12 +76,10 @@ export const cancelConcert = async (req: Request, res: Response) => {
 
     const parsedBody = cancelConcertSchema.safeParse(req.body);
     if (!parsedBody.success) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: parsedBody.error.issues[0]?.message ?? "Invalid request body",
-        });
+      return res.status(400).json({
+        success: false,
+        message: parsedBody.error.issues[0]?.message ?? "Invalid request body",
+      });
     }
 
     const organizerId = req.user?.userId;
@@ -93,7 +87,7 @@ export const cancelConcert = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    await ConcertService.cancelConcert(
+    await OrganizerService.cancelConcert(
       parsedParams.data.id,
       organizerId,
       parsedBody.data.reason ?? null,
@@ -101,6 +95,58 @@ export const cancelConcert = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: "Concert đã bị hủy. Thông báo đang được gửi đến người dùng.",
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ success: false, message: error.message });
+    }
+
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const publishConcert = async (req: Request, res: Response) => {
+  try {
+    const parsedParams = uuidParamSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({ success: false, message: "Invalid concert id" });
+    }
+
+    const organizerId = req.user?.userId;
+    if (!organizerId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    await OrganizerService.publishConcert(parsedParams.data.id, organizerId);
+    return res.status(200).json({
+      success: true,
+      message: "Concert published successfully",
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ success: false, message: error.message });
+    }
+
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+export const restoreConcert = async (req: Request, res: Response) => {
+  try {
+    const parsedParams = uuidParamSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return res.status(400).json({ success: false, message: "Invalid concert id" });
+    }
+
+    const organizerId = req.user?.userId;
+    if (!organizerId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    await OrganizerService.restoreConcert(parsedParams.data.id, organizerId);
+    return res.status(200).json({
+      success: true,
+      message: "Concert restored successfully",
     });
   } catch (error) {
     if (error instanceof AppError) {

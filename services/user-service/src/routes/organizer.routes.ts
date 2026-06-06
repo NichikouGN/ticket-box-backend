@@ -12,12 +12,12 @@ router.use(authMiddleware);
 router.use(rbacMiddleware("ORGANIZER"));
 
 router.get("/", getAllUsers);
-router.patch("/:id/role", updateUserRole);
-router.patch("/:id/status", updateUserStatus);
+router.patch("/:targetId/role", updateUserRole);
+router.patch("/:targetId/status", updateUserStatus);
 
 router.use((req, res) => {
   console.log("Auth Routes: Unhandled request:", req.method, req.originalUrl);
-  res.status(404).json({ message: "Not Found" });
+  res.status(404).json({ success: false, message: "Not Found" });
 });
 
 export default router;

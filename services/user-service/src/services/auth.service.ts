@@ -3,13 +3,10 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/
 import { comparePassword, hashPassword } from "../utils/password.util.js";
 import { UserRepository } from "../repository/user.repository.js";
 import crypto from "crypto";
+import type { SignInInput, SignUpInput, RefreshTokenInput } from "../types/user.types.js";
 
 export const AuthService = {
-  async signup(email: string, password: string, fullName: string | null) {
-    if (!email || !password) {
-      throw new AppError("Email and password are required", 400);
-    }
-
+  async signup({ email, password, fullName }: SignUpInput) {
     const existingUser = await UserRepository.findByEmail(email);
     if (existingUser) {
       throw new AppError("Email already registered", 409);
@@ -30,11 +27,7 @@ export const AuthService = {
     });
   },
 
-  async signin(email: string, password: string) {
-    if (!email || !password) {
-      throw new AppError("Email and password are required", 400);
-    }
-
+  async signin({ email, password }: SignInInput) {
     const user = await UserRepository.findByEmail(email);
 
     if (!user) {
@@ -53,11 +46,7 @@ export const AuthService = {
     return { accessToken, refreshToken };
   },
 
-  async refreshAccessToken(refreshToken: string) {
-    if (!refreshToken) {
-      throw new AppError("Refresh token is required", 400);
-    }
-
+  async refreshAccessToken({ refreshToken }: RefreshTokenInput) {
     const payload = verifyRefreshToken(refreshToken);
 
     if (!payload) {

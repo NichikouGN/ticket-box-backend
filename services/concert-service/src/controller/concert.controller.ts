@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { AppError } from "../types/appError.types.js";
 import { ConcertService } from "../services/concert.service.js";
 import { listQuerySchema, uuidParamSchema } from "../types/concert.types.js";
+import type { AuthPayload } from "../types/auth.types.js";
 
 export const getHealth = async (_req: Request, res: Response) => {
   const health = await ConcertService.getHealth();
@@ -17,7 +18,13 @@ export const getConcerts = async (req: Request, res: Response) => {
         .json({ success: false, message: parsed.error.issues[0]?.message ?? "Invalid query" });
     }
 
-    const result = await ConcertService.listConcerts(parsed.data.page, parsed.data.limit);
+    const organizerId = req.user?.userId;
+
+    const result = await ConcertService.listConcerts(
+      parsed.data.page,
+      parsed.data.limit,
+      organizerId,
+    );
     return res.status(200).json({
       success: true,
       data: result.data,
@@ -44,7 +51,9 @@ export const getConcertDetail = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid concert id" });
     }
 
-    const result = await ConcertService.getConcertDetail(parsed.data.id);
+    const organizerId = req.user?.userId;
+
+    const result = await ConcertService.getConcertDetail(parsed.data.id, organizerId);
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof AppError) {
@@ -62,7 +71,9 @@ export const getConcertTickets = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid concert id" });
     }
 
-    const result = await ConcertService.getConcertTicketsDetails(parsed.data.id);
+    const organizerId = req.user?.userId;
+
+    const result = await ConcertService.getConcertTicketsDetails(parsed.data.id, organizerId);
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof AppError) {
@@ -80,7 +91,9 @@ export const getConcertStock = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid concert id" });
     }
 
-    const result = await ConcertService.getConcertStock(parsed.data.id);
+    const organizerId = req.user?.userId;
+
+    const result = await ConcertService.getConcertStock(parsed.data.id, organizerId);
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof AppError) {
