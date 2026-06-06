@@ -32,6 +32,15 @@ npm run dev
 
 ## 4. Version
 
+### v0.2.0 (2026-06-06)
+
+- Created concerts microservice
+- Allowed user to view list of concerts, concert details, ticket info and remaining stocks (only published concerts).
+- Allowed organizer to view all concerts regardless of status, create, edit, pushlish, cancel and restore a concert.
+- Added optional jwt authentication for public concert route.
+- Added Redis to act as a cache layer for concert service
+- Changed User Service to use zod for http validation.
+
 ### v0.1.0 (2026-06-05)
 
 - Created database schema and seed
