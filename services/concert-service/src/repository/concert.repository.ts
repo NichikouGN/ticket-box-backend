@@ -87,7 +87,17 @@ export const ConcertRepository = {
       .orderBy("tt.price", "asc");
   },
 
-  async getConcertWithStock(concertId: string) {
+  // async getConcertWithTickets(concertId: string) {
+  // const concert = await this.getConcertDetail(concertId);
+  // if (!concert) {
+  // return null;
+  // }
+  //
+  // const ticketTypes = await this.getTicketTypes(concertId);
+  // return { concert, ticketTypes };
+  // },
+
+  async getConcertTicketsDetails(concertId: string) {
     const concert = await this.getConcertDetail(concertId);
 
     if (!concert) {

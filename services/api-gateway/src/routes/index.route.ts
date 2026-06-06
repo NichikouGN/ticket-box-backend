@@ -7,6 +7,7 @@ const router = Router();
 router.use("/api/v1/users", userProxy);
 router.use("/api/v1/organizer/users", organizerProxy);
 router.use("/api/v1/auth", authProxy);
+
 router.use("/api/v1/concerts", concertProxy);
 router.use("/api/v1/organizer/concerts", organizerConcertProxy);
 

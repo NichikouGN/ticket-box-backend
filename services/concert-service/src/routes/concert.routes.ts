@@ -8,9 +8,9 @@ import {
 
 const router = Router();
 
-router.get("/concerts", getConcerts);
-router.get("/concerts/:id", getConcertDetail);
-router.get("/concerts/:id/tickets", getConcertTickets);
-router.get("/concerts/:id/stock", getConcertStock);
+router.get("/", getConcerts);
+router.get("/:id", getConcertDetail);
+router.get("/:id/tickets", getConcertTickets);
+router.get("/:id/stock", getConcertStock);
 
 export default router;

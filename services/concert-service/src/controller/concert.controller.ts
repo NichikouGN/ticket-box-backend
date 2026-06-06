@@ -28,6 +28,7 @@ export const getConcerts = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    console.error("Error in getConcerts:", error);
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({ success: false, message: error.message });
     }
@@ -61,7 +62,7 @@ export const getConcertTickets = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid concert id" });
     }
 
-    const result = await ConcertService.getConcertTickets(parsed.data.id);
+    const result = await ConcertService.getConcertTicketsDetails(parsed.data.id);
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof AppError) {

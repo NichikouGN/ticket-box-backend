@@ -2,8 +2,8 @@ POST http://localhost:3000/api/v1/auth/sign-in
 Content-Type: application/json
 
 {
-  "email": "Nichikou",
-  "password": "123"
+  "email": "nichikou@example.com",
+  "password": "123456"
 }
 ###
 POST http://localhost:3000/api/v1/auth/sign-in
@@ -29,7 +29,7 @@ POST http://localhost:3000/api/v1/auth/refresh-token
 Content-Type: application/json
 
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3MDg5MWRmZi0zYmVlLTQwZGEtOTkxZi04ZDFlNzMyZGE3YTgiLCJyb2xlIjoiQVVESUVOQ0UiLCJpYXQiOjE3ODA2NjYwOTUsImV4cCI6MTc4MTI3MDg5NX0.Lhg58Bxcv-yVB8I7OCAJKcrIrgi-CvCDrPPTUP65ih4"
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM1NzkwLCJleHAiOjE3ODEzNDA1OTB9.-y1P4TzoDAWu8zpP3qWADaDT7d2_viDolWOtoJlXbK4"
 }
 
 ###

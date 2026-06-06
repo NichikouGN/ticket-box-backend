@@ -1,0 +1,51 @@
+GET http://localhost:3000/api/v1/concerts
+###
+GET http://localhost:3000/api/v1/concerts/8a1b2c3d-4e5f-4a6b-8c9d-000000000001/tickets
+###
+GET http://localhost:3000/api/v1/concerts/8a1b2c3d-4e5f-4a6b-8c9d-000000000001/stock
+###
+POST http://localhost:3000/api/v1/organizer/concerts/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM1ODA3LCJleHAiOjE3ODA3MzY3MDd9.FA6vmt8t-xSr2gaD3nREi8q5yZaK-UWaK_pufX_GJhQ 
+
+{
+    "title": "Rocking Beats Festival",
+    "description": "Join us for an unforgettable night of rock music with top bands from around the world. Experience electrifying performances, great food, and a vibrant atmosphere. Don't miss out on the ultimate rock music festival of the year!",
+    "artists": ["The Rockers", "Electric Pulse", "The Thunderbolts"],
+    "venue": "Madison Square Garden, New York",
+    "start_time": "2024-12-15T19:00:00Z",
+    "thumbnail_url": "https://example.com/thumbnails/rocking-beats-festival.jpg",
+    "seat_map_svg_url": "https://example.com/seatmaps/rocking-beats-festival.svg",
+    "ticket_types": [
+        {
+            "name": "General Admission",
+            "price": 50.00,
+            "total_capacity": 5000,
+            "max_per_user": 4
+        },
+        {
+            "name": "VIP",
+            "price": 150.00,
+            "total_capacity": 1000,
+            "max_per_user": 2
+        },
+        {
+            "name": "Backstage Pass",
+            "price": 300.00,
+            "total_capacity": 100,
+            "max_per_user": 1
+        }
+    ]
+}
+###
+PATCH http://localhost:3000/api/v1/organizer/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM2NDAyLCJleHAiOjE3ODA3MzczMDJ9.I-m82tdojfknKp-VV5lUM6vOi0jp_fKsU33lfMrKolo 
+
+{
+    "start_time": "2026-12-15T20:00:00Z"
+}
+###
+PATCH http://localhost:3000/api/v1/organizer/concerts/ad8914cf-3dcb-4fc5-ab0c-1289173e42f9/cancel
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkNmVhZTc1Yy1lZmIyLTRkODEtOTAzOC0zNWRlMGY0MmU5YjciLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgwNzM2NDAyLCJleHAiOjE3ODA3MzczMDJ9.I-m82tdojfknKp-VV5lUM6vOi0jp_fKsU33lfMrKolo 

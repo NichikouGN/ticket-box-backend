@@ -8,8 +8,8 @@ const router = Router();
 router.use(authMiddleware);
 router.use(rbacMiddleware("ORGANIZER"));
 
-router.post("/concerts", createConcert);
-router.patch("/concerts/:id", updateConcert);
-router.patch("/concerts/:id/cancel", cancelConcert);
+router.post("/", createConcert);
+router.patch("/:id", updateConcert);
+router.patch("/:id/cancel", cancelConcert);
 
 export default router;

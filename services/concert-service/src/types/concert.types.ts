@@ -46,9 +46,9 @@ export type ConcertListItem = {
   title: string;
   artists: string[];
   venue: string;
-  start_time: string;
+  startTime: string;
   status: string;
-  thumbnail_url: string | null;
+  thumbnailUrl: string | null;
 };
 
 export type ConcertDetail = {
@@ -57,23 +57,21 @@ export type ConcertDetail = {
   description: string | null;
   artists: string[];
   venue: string;
-  start_time: string;
-  thumbnail_url: string | null;
-  seat_map_svg_url: string | null;
+  startTime: string;
+  thumbnailUrl: string | null;
+  seatMapSvgUrl: string | null;
 };
 
 export type TicketTypeView = {
   id: string;
   name: string;
   price: number;
-  max_per_user: number;
-  available_seats: number;
+  maxPerUser: number;
+  // available_seats: number;
 };
 
 export type StockTicketTypeView = {
   id: string;
   name: string;
-  price: number;
-  total_quantity: number;
-  sold_quantity: number;
+  stock: number;
 };
