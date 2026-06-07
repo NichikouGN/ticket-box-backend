@@ -19,13 +19,13 @@ API Gateway là điểm vào duy nhất (single entry point) của toàn bộ h�
 
 Gateway áp dụng Token Bucket algorithm để giới hạn tốc độ request theo từng nhóm endpoint:
 
-| Nhóm endpoint | Giới hạn | Cửa sổ | Khóa theo |
-|--------------|----------|---------|-----------|
-| POST /checkin/verify | 200 req | 1 phút | IP |
-| POST /orders (mua vé) | 5 req | 1 phút | User ID |
-| POST /auth/login | 10 req | 15 phút | IP |
-| Các GET endpoint public | 100 req | 1 phút | IP |
-| Các endpoint Organizer | 30 req | 1 phút | User ID |
+| Nhóm endpoint           | Giới hạn | Cửa sổ  | Khóa theo |
+| ----------------------- | -------- | ------- | --------- |
+| POST /checkin/verify    | 200 req  | 1 phút  | IP        |
+| POST /orders (mua vé)   | 5 req    | 1 phút  | User ID   |
+| POST /auth/login        | 10 req   | 15 phút | IP        |
+| Các GET endpoint public | 100 req  | 1 phút  | IP        |
+| Các endpoint Organizer  | 30 req   | 1 phút  | User ID   |
 
 Khi vượt ngưỡng: trả về `429 Too Many Requests` với header `Retry-After` cho biết thời gian chờ.
 
@@ -33,14 +33,14 @@ Khi vượt ngưỡng: trả về `429 Too Many Requests` với header `Retry-Af
 
 Gateway định tuyến request đến đúng service dựa trên path prefix:
 
-| Path prefix | Service đích |
-|------------|--------------|
-| /api/v1/concerts | Concert Service |
-| /api/v1/orders | Order Service |
-| /api/v1/payments | Payment Service |
-| /api/v1/checkin | Check-in Service |
-| /api/v1/organizer | Organizer Service |
-| /api/v1/auth | User Service |
+| Path prefix           | Service đích         |
+| --------------------- | -------------------- |
+| /api/v1/concerts      | Concert Service      |
+| /api/v1/orders        | Order Service        |
+| /api/v1/payments      | Payment Service      |
+| /api/v1/checkin       | Check-in Service     |
+| /api/v1/organizer     | Organizer Service    |
+| /api/v1/auth          | User Service         |
 | /api/v1/notifications | Notification Service |
 
 #### CORS:
@@ -113,30 +113,30 @@ Hệ thống dùng BullMQ chạy trên Redis instance riêng (tách biệt với
 
 ### Các queue và job type
 
-| Queue | Job type | Producer | Consumer | Mô tả |
-|---------|----------|----------|----------|--------|
-| notification-queue | SEND_ORDER_CONFIRMED | Payment Service | Notification Worker | Gửi email + in-app khi mua vé thành công |
-| notification-queue | SEND_ORDER_FAILED | Payment Service | Notification Worker | Gửi thông báo khi thanh toán thất bại |
-| notification-queue | SEND_REMINDER_24H | Cron Job | Notification Worker | Nhắc nhở trước ngày diễn 24h |
-| notification-queue | SEND_CONCERT_CANCELLED | Organizer Service | Notification Worker | Thông báo hủy concert |
-| payment-queue | PENDING_PAYMENT | Order Service | Payment Worker | Các order đang đợi được thanh toán |
-| order-queue | CLEANUP_EXPIRED_ORDERS | Order Service | Order Cleanup Worker | Kiểm tra status của order sau 10p delay. Nếu vẫn pending => expired và hoàn trả stock |
-| ticket-queue | GENERATE_TICKETS | Payment Service | Ticket Worker | Sinh vé + QR sau thanh toán thành công |
-| import-queue | PROCESS_CSV | VIP Import Service | Import Worker | Xử lý file CSV khách mời VIP |
-| ai-bio-queue | GENERATE_ARTIST_BIO | AI Bio Service | AI Worker | Sinh tiểu sử nghệ sĩ từ PDF |
+| Queue              | Job type               | Producer           | Consumer             | Mô tả                                                                                 |
+| ------------------ | ---------------------- | ------------------ | -------------------- | ------------------------------------------------------------------------------------- | ---------------------------------- | --- |
+| notification-queue | SEND_ORDER_CONFIRMED   | Payment Service    | Notification Worker  | Gửi email + in-app khi mua vé thành công                                              |
+| notification-queue | SEND_ORDER_FAILED      | Payment Service    | Notification Worker  | Gửi thông báo khi thanh toán thất bại                                                 |
+| notification-queue | SEND_REMINDER_24H      | Cron Job           | Notification Worker  | Nhắc nhở trước ngày diễn 24h                                                          |
+| notification-queue | SEND_CONCERT_CANCELLED | Organizer Service  | Notification Worker  | Thông báo hủy concert                                                                 |
+| <!--               | payment-queue          | PENDING_PAYMENT    | Order Service        | Payment Worker                                                                        | Các order đang đợi được thanh toán | --> |
+| order-queue        | CLEANUP_EXPIRED_ORDERS | Order Service      | Order Cleanup Worker | Kiểm tra status của order sau 10p delay. Nếu vẫn pending => expired và hoàn trả stock |
+| ticket-queue       | GENERATE_TICKETS       | Payment Service    | Ticket Worker        | Sinh vé + QR sau thanh toán thành công                                                |
+| import-queue       | PROCESS_CSV            | VIP Import Service | Import Worker        | Xử lý file CSV khách mời VIP                                                          |
+| ai-bio-queue       | GENERATE_ARTIST_BIO    | AI Bio Service     | AI Worker            | Sinh tiểu sử nghệ sĩ từ PDF                                                           |
 
 ### Cơ chế retry
 
 Mỗi job được cấu hình retry riêng tùy mức độ quan trọng:
 
-| Job type | Max retry | Delay | Hành vi sau khi hết retry |
-|-----------|----------|--------|---------------------------|
-| SEND_ORDER_CONFIRMED | 3 | 1m → 5m → 15m | Ghi failed log, Organizer xử lý thủ công |
-| PENDING_PAYMENT | 3 | 30s → 60s → 120s | Cập nhật order → FAILED, hoàn trả stock |
-| GENERATE_TICKETS | 3 | 10s → 30s → 60s | Dead Letter Queue, Organizer xử lý thủ công |
-| PROCESS_CSV | 1 | 0 | Ghi failed log, thông báo Organizer |
-| GENERATE_ARTIST_BIO | 2 | 60s → 600s | Thông báo Organizer, không auto-publish |
-| CLEANUP_EXPIRED_ORDERS | 0 | 0 | Log lỗi, chờ lần chạy tiếp theo |
+| Job type               | Max retry | Delay            | Hành vi sau khi hết retry                   |
+| ---------------------- | --------- | ---------------- | ------------------------------------------- |
+| SEND_ORDER_CONFIRMED   | 3         | 1m → 5m → 15m    | Ghi failed log, Organizer xử lý thủ công    |
+| PENDING_PAYMENT        | 3         | 30s → 60s → 120s | Cập nhật order → FAILED, hoàn trả stock     |
+| GENERATE_TICKETS       | 3         | 10s → 30s → 60s  | Dead Letter Queue, Organizer xử lý thủ công |
+| PROCESS_CSV            | 1         | 0                | Ghi failed log, thông báo Organizer         |
+| GENERATE_ARTIST_BIO    | 2         | 60s → 600s       | Thông báo Organizer, không auto-publish     |
+| CLEANUP_EXPIRED_ORDERS | 0         | 0                | Log lỗi, chờ lần chạy tiếp theo             |
 
 ### Đảm bảo xử lý đúng một lần
 

@@ -6,16 +6,16 @@ Ticket Service chịu trách nhiệm sinh vé và mã QR sau khi thanh toán th�
 
 ### Phạm vi
 
-* Nhận job từ queue và sinh vé sau khi payment thành công.
-* Tạo mã QR token ngẫu nhiên, mã hóa AES-256 để lưu DB, hash SHA-256 để staff so sánh khi soát vé.
-* Cho phép user xem danh sách vé đã mua.
-* Cung cấp internal API cho Check-in Service truy vấn danh sách hash SHA-256 theo concert.
+- Nhận job từ queue và sinh vé sau khi payment thành công.
+- Tạo mã QR token ngẫu nhiên, mã hóa AES-256 để lưu DB, hash SHA-256 để staff so sánh khi soát vé.
+- Cho phép user xem danh sách vé đã mua.
+- Cung cấp internal API cho Check-in Service truy vấn danh sách hash SHA-256 theo concert.
 
 ### Nguyên tắc thiết kế
 
-* Ticket Worker phải idempotent — nếu job bị retry, không được tạo vé trùng.
-* Không bao giờ expose mã QR gốc qua API — chỉ trả về dạng đã mã hóa AES-256 để render QR trên app.
-* SHA-256 là dạng một chiều — staff không thể reverse lại mã gốc.
+- Ticket Worker phải idempotent — nếu job bị retry, không được tạo vé trùng.
+- Không bao giờ expose mã QR gốc qua API — chỉ trả về dạng đã mã hóa AES-256 để render QR trên app.
+- SHA-256 là dạng một chiều — staff không thể reverse lại mã gốc.
 
 ---
 
@@ -109,18 +109,18 @@ Phản hồi tương tự API 1 nhưng trả về một vé duy nhất.
 
 2. Ticket Worker nhận job, kiểm tra idempotency: truy vấn DB xem order_id này đã có ticket chưa.
 3. Nếu đã có và đủ vé:
+   - Bỏ qua.
+   - Đánh dấu job complete.
 
-   * Bỏ qua.
-   * Đánh dấu job complete.
 4. Nếu bị thiếu hoặc chưa có:
+   - Tiếp tục xử lý.
 
-   * Tiếp tục xử lý.
 5. Với mỗi vé cần tạo:
+   - Sinh qr_raw = UUID v4 ngẫu nhiên.
+   - Tính qr_sha256 = SHA-256(qr_raw).
+   - Tính qr_aes256 = AES-256-encrypt(qr_raw, SECRET_KEY).
+   - INSERT vào bảng tickets.
 
-   * Sinh qr_raw = UUID v4 ngẫu nhiên.
-   * Tính qr_sha256 = SHA-256(qr_raw).
-   * Tính qr_aes256 = AES-256-encrypt(qr_raw, SECRET_KEY).
-   * INSERT vào bảng tickets.
 6. Đánh dấu job complete.
 
 ---
@@ -129,18 +129,18 @@ Phản hồi tương tự API 1 nhưng trả về một vé duy nhất.
 
 ### 5.1 Worker crash giữa chừng khi đang tạo vé
 
-* BullMQ đưa job trở lại queue sau timeout.
-* Worker retry, idempotency check phát hiện order chưa có đủ vé → tạo tiếp phần còn thiếu.
+- BullMQ đưa job trở lại queue sau timeout.
+- Worker retry, idempotency check phát hiện order chưa có đủ vé → tạo tiếp phần còn thiếu.
 
 ### 5.2 SECRET_KEY không hợp lệ khi decrypt AES-256 phía client
 
-* App hiển thị thông báo:
+- App hiển thị thông báo:
 
 ```text
 Không thể hiển thị mã QR. Vui lòng thử lại.
 ```
 
-* Log:
+- Log:
 
 ```text
 ERROR | AES decrypt failed | ticket_id={id}
@@ -150,17 +150,17 @@ ERROR | AES decrypt failed | ticket_id={id}
 
 ## 6. Ràng buộc
 
-* Idempotency: Ticket Worker kiểm tra DB trước khi tạo vé — không tạo trùng dù job bị retry nhiều lần.
-* Không expose qr_raw: Giá trị qr_raw không được lưu vào db mà chỉ được exist trong bộ nhớ ứng dụng.
-* SECRET_KEY quản lý qua biến môi trường: Không hardcode trong code.
-* Append-only: Vé đã tạo không được xóa — chỉ được đánh dấu used = true.
-* Vé user xem phải match với user hiện tại đang đăng nhập qua JWT_Token.
+- Idempotency: Ticket Worker kiểm tra DB trước khi tạo vé — không tạo trùng dù job bị retry nhiều lần.
+- Không expose qr_raw: Giá trị qr_raw không được lưu vào db mà chỉ được exist trong bộ nhớ ứng dụng.
+- SECRET_KEY quản lý qua biến môi trường: Không hardcode trong code.
+- Append-only: Vé đã tạo không được xóa — chỉ được đánh dấu used = true.
+- Vé user xem phải match với user hiện tại đang đăng nhập qua JWT_Token.
 
 ---
 
 ## 7. Tiêu chí chấp nhận
 
-* Sau khi payment thành công, vé được tạo trong vòng 30 giây.
-* Job retry không tạo vé trùng cho cùng một order.
-* User xem được danh sách vé với mã QR hiển thị đúng.
-* Job thất bại sau 5 lần retry xuất hiện trong Dead Letter Queue, không bị mất.
+- Sau khi payment thành công, vé được tạo trong vòng 30 giây.
+- Job retry không tạo vé trùng cho cùng một order.
+- User xem được danh sách vé với mã QR hiển thị đúng.
+- Job thất bại sau 5 lần retry xuất hiện trong Dead Letter Queue, không bị mất.

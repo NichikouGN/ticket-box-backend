@@ -18,12 +18,12 @@ Khi concert mở bán, khoảng 80.000 người có thể truy cập cùng lúc 
 
 #### So sánh Token Bucket với các thuật toán khác
 
-| Thuật toán | Nhược điểm |
-|---|---|
-| Fixed Window | Có thể bị burst ở đầu/cuối window |
-| Sliding Window | Chính xác hơn nhưng tốn tài nguyên |
-| Leaky Bucket | Chính xác hơn nhưng tốn tài nguyên |
-| Token Bucket | Quá đều, không phù hợp peak traffic |
+| Thuật toán     | Nhược điểm                          |
+| -------------- | ----------------------------------- |
+| Fixed Window   | Có thể bị burst ở đầu/cuối window   |
+| Sliding Window | Chính xác hơn nhưng tốn tài nguyên  |
+| Leaky Bucket   | Chính xác hơn nhưng tốn tài nguyên  |
+| Token Bucket   | Quá đều, không phù hợp peak traffic |
 
 ### 1.2 Bảo vệ backend bằng Waiting Room
 
@@ -49,6 +49,7 @@ Sử dụng Redis vì:
 - Hỗ trợ distributed system
 
 **Ví dụ key:**
+
 ```
 rate_limit:user_123
 rate_limit:ip_1.2.3.4
@@ -69,11 +70,11 @@ rate_limit:ip_1.2.3.4
 
 Circuit Breaker có 3 trạng thái:
 
-| Trạng thái | Ý nghĩa |
-|---|---|
-| Closed | Hoạt động bình thường |
-| Open | Chặn request đến payment gateway |
-| Half-Open | Test thử gateway đã phục hồi chưa |
+| Trạng thái | Ý nghĩa                           |
+| ---------- | --------------------------------- |
+| Closed     | Hoạt động bình thường             |
+| Open       | Chặn request đến payment gateway  |
+| Half-Open  | Test thử gateway đã phục hồi chưa |
 
 ---
 
@@ -84,6 +85,7 @@ Circuit Breaker có 3 trạng thái:
 Mỗi request thanh toán sẽ có một `Idempotency-Key`
 
 **Ví dụ:**
+
 ```
 550e8400-e29b-41d4-a716-446655440000
 ```
@@ -119,6 +121,7 @@ Mỗi request thanh toán sẽ có một `Idempotency-Key`
 ### 4.1 Cache-Aside hoạt động
 
 **Luồng xử lý:**
+
 ```
 Client → API → Redis
                  ├─ Cache hit → trả dữ liệu
@@ -130,14 +133,17 @@ Client → API → Redis
 **Thông tin concert** (Tên concert, Banner, Mô tả, Nghệ sĩ)
 
 Ít thay đổi nên:
+
 - TTL: 30 phút - 2 giờ
 
 **Danh sách concert hot**
+
 - TTL: 5 - 10 phút
 
 **Số vé còn lại**
 
 Dữ liệu thay đổi liên tục nên:
+
 - TTL ngắn, hoặc
 - Chủ động invalidate khi có giao dịch
 
@@ -151,11 +157,13 @@ Khi thanh toán thành công:
 2. Xóa cache liên quan
 
 **Ví dụ:**
+
 ```
 DEL concert:123:remaining_seats
 ```
 
 Request tiếp theo:
+
 - Load lại từ DB
 - Cache lại dữ liệu mới
 
@@ -173,12 +181,12 @@ Redis phù hợp vì:
 
 ## 5. Tổng kết kiến trúc bảo vệ hệ thống
 
-| Vấn đề | Giải pháp |
-|---|---|
-| Traffic đột biến | Token Bucket + Waiting Room |
+| Vấn đề              | Giải pháp                              |
+| ------------------- | -------------------------------------- |
+| Traffic đột biến    | Token Bucket + Waiting Room            |
 | Payment Gateway lỗi | Circuit Breaker + Graceful Degradation |
-| Thanh toán lặp | Idempotency Key |
-| Database quá tải | Redis Cache-Aside |
+| Thanh toán lặp      | Idempotency Key                        |
+| Database quá tải    | Redis Cache-Aside                      |
 
 Các cơ chế trên phối hợp với nhau giúp hệ thống:
 

@@ -29,10 +29,12 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
 **Endpoint:** `POST /api/v1/orders`
 
 **Headers:**
+
 - `Authorization: Bearer <JWT_Token>` — Bắt buộc
 - `Idempotency-Key: <UUIDv4 Frontend>` — Bắt buộc
 
 **Request Body:**
+
 ```json
 {
   "data": [
@@ -46,6 +48,7 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
 ```
 
 **Phản hồi thành công (201 Created):**
+
 ```json
 {
   "success": true,
@@ -69,6 +72,7 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
 **Query Parameters:** `page`, `limit`, `status`, `concert_id`, `user_id`
 
 **Phản hồi (200 OK):**
+
 ```json
 {
   "success": true,
@@ -104,10 +108,11 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
 3. Xử lý kết quả nhận được:
    - Nếu `FAILED`: Xóa Idempotency Key, trả lỗi `400 Bad Request` (`"Vé đã hết hoặc vượt quá giới hạn mua"`)
    - Nếu `SUCCESS`: Tạo bản ghi với trạng thái `PENDING` trong DB ở table `order`
-4. Đẩy 2 job vào BullMQ:
+4. Đẩy 1 job vào BullMQ:
    - `order-queue: CLEANUP_EXPIRED_ORDER` — delay 10 phút. Một worker sẽ check job và kiểm tra `order_id` và trạng thái trong PostgreSQL. Nếu vẫn là `'pending'`, đưa trạng thái về `'expired'` và đồng thời hoàn lại vé
-   - `payment-queue: PENDING_PAYMENT` — dùng cho Payment Service consume và thực hiện các bước kế tiếp của quá trình giao dịch
-5. Phản hồi `201 Created` về Frontend
+   <!-- - `payment-queue: PENDING_PAYMENT` — dùng cho Payment Service consume và thực hiện các bước kế tiếp của quá trình giao dịch -->
+5. Gọi payment Service với các thông tin vé đã nhận, payment service trả về url để frontend redirect
+6. Phản hồi `201 Created` về Frontend
 
 ### Luồng 2: Xử lý job CLEANUP_EXPIRED_ORDER
 

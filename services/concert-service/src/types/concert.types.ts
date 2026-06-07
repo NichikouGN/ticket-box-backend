@@ -12,10 +12,10 @@ export const listQuerySchema = z.object({
 const ticketTypeSchema = z.object({
   name: z.string().min(1),
   price: z.coerce.number().int().nonnegative(),
-  max_per_user: z.coerce.number().int().positive(),
-  total_capacity: z.coerce.number().int().positive(),
-  sale_start: z.string().datetime().optional().nullable(),
-  sale_end: z.string().datetime().optional().nullable(),
+  maxPerUser: z.coerce.number().int().positive(),
+  totalCapacity: z.coerce.number().int().positive(),
+  saleStart: z.string().datetime().optional().nullable(),
+  saleEnd: z.string().datetime().optional().nullable(),
 });
 
 export const createConcertSchema = z
@@ -24,15 +24,15 @@ export const createConcertSchema = z
     description: z.string().optional().nullable(),
     artists: z.array(z.string().min(1)).min(1),
     venue: z.string().min(1),
-    event_date: z.string().datetime(),
-    thumbnail_url: z.string().url().optional().nullable(),
-    seat_map_svg_url: z.string().url().optional().nullable(),
-    ticket_types: z.array(ticketTypeSchema).min(1),
+    eventDate: z.string().datetime(),
+    thumbnailUrl: z.string().url().optional().nullable(),
+    seatMapSvgUrl: z.string().url().optional().nullable(),
+    ticketTypes: z.array(ticketTypeSchema).min(1),
   })
   .strict();
 
 export const updateConcertSchema = createConcertSchema.partial().extend({
-  ticket_types: z.array(ticketTypeSchema).optional(),
+  ticketTypes: z.array(ticketTypeSchema).optional(),
 });
 
 export const cancelConcertSchema = z.object({
@@ -69,7 +69,6 @@ export type TicketTypeView = {
   name: string;
   price: number;
   maxPerUser: number;
-  // available_seats: number;
 };
 
 export type StockTicketTypeView = {

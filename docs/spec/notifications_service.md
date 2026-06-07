@@ -6,12 +6,12 @@ Notification Service chịu trách nhiệm gửi thông báo đến người dù
 
 ### 1.1 Các loại thông báo được hỗ trợ
 
-| Loại | Trigger | Kênh |
-|--------|---------|---------|
-| SEND_ORDER_CONFIRMED | Payment Service xác nhận thanh toán thành công | Email + In-app |
-| SEND_ORDER_FAILED | Payment Service xác nhận thanh toán thất bại sau retry | Email + In-app |
-| REMINDER_24H | Cron job chạy mỗi ngày, concert diễn ra sau 24 giờ | Email + In-app |
-| CONCERT_CANCELLED | Organizer hủy concert | Email + In-app |
+| Loại                 | Trigger                                                | Kênh           |
+| -------------------- | ------------------------------------------------------ | -------------- |
+| SEND_ORDER_CONFIRMED | Payment Service xác nhận thanh toán thành công         | Email + In-app |
+| SEND_ORDER_FAILED    | Payment Service xác nhận thanh toán thất bại sau retry | Email + In-app |
+| REMINDER_24H         | Cron job chạy mỗi ngày, concert diễn ra sau 24 giờ     | Email + In-app |
+| CONCERT_CANCELLED    | Organizer hủy concert                                  | Email + In-app |
 
 ### 1.2 Nguyên tắc thiết kế
 
@@ -128,7 +128,7 @@ SELECT * FROM notifications WHERE user_id = :{user_id}
 }
 ```
 
-**(Quy tắc sinh idempotency_key: Định dạng theo cú pháp `[tên_thực_thể]:[mã_định_danh]:[loại_sự_kiện]`)**
+**(Quy tắc sinh idempotency*key: Định dạng theo cú pháp `[tên_thực_thể]:[mã*định_danh]:[loại_sự_kiện]`)**
 
 2. Background Worker consume job từ queue
 3. Worker kiểm tra bảng notifications trong Postgre:

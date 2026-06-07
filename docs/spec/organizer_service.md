@@ -6,9 +6,9 @@ Organizer Service cung cấp giao diện và API quản trị dành riêng cho O
 
 ### Phạm vi
 
-* Toàn bộ API trong service này yêu cầu role ORGANIZER — mọi request thiếu JWT hợp lệ hoặc không đủ quyền đều bị từ chối.
-* Organizer Service không tự xử lý logic nghiệp vụ của các service khác. Khi hủy concert, Organizer Service gọi Concert Service; khi xử lý refund, gọi Payment Service — không duplicate logic.
-* Mọi thao tác thay đổi dữ liệu (khóa user, hủy concert, refund) đều được ghi audit log với thông tin: ai thực hiện, lúc nào, thay đổi gì.
+- Toàn bộ API trong service này yêu cầu role ORGANIZER — mọi request thiếu JWT hợp lệ hoặc không đủ quyền đều bị từ chối.
+- Organizer Service không tự xử lý logic nghiệp vụ của các service khác. Khi hủy concert, Organizer Service gọi Concert Service; khi xử lý refund, gọi Payment Service — không duplicate logic.
+- Mọi thao tác thay đổi dữ liệu (khóa user, hủy concert, refund) đều được ghi audit log với thông tin: ai thực hiện, lúc nào, thay đổi gì.
 
 ---
 
@@ -22,9 +22,9 @@ Organizer Service cung cấp giao diện và API quản trị dành riêng cho O
 
 ##### Query Parameters
 
-* concert_id (optional)
-* from_date
-* to_date
+- concert_id (optional)
+- from_date
+- to_date
 
 ##### Phản hồi (200 OK)
 
@@ -65,10 +65,10 @@ Organizer Service cung cấp giao diện và API quản trị dành riêng cho O
 1. Organizer gửi `GET /api/v1/organizer/dashboard` với query params.
 2. Middleware xác thực JWT, kiểm tra role = ORGANIZER.
 3. Organizer Service thực hiện aggregation query trên PostgreSQL:
+   - `SUM(total_amount) WHERE status = 'paid'`
+   - `GROUP BY ticket_type, status`
+   - Lọc theo concert_id và khoảng thời gian nếu có.
 
-   * `SUM(total_amount) WHERE status = 'paid'`
-   * `GROUP BY ticket_type, status`
-   * Lọc theo concert_id và khoảng thời gian nếu có.
 4. Trả về JSON payload thống kê.
 
 ---
@@ -77,21 +77,21 @@ Organizer Service cung cấp giao diện và API quản trị dành riêng cho O
 
 ### 4.1 Hủy concert đã có người mua vé
 
-* Đây là luồng bình thường, không phải lỗi — hủy concert vẫn được phép dù đã bán vé.
-* Hệ thống tự động trigger refund cho toàn bộ order paid qua Background Worker.
-* Organizer nhận cảnh báo trong response: số lượng order sẽ được refund.
+- Đây là luồng bình thường, không phải lỗi — hủy concert vẫn được phép dù đã bán vé.
+- Hệ thống tự động trigger refund cho toàn bộ order paid qua Background Worker.
+- Organizer nhận cảnh báo trong response: số lượng order sẽ được refund.
 
 ### 4.2 Organizer cố tình thao tác trùng (hủy concert đã hủy, ban user đã bị ban)
 
-* Hệ thống kiểm tra trạng thái hiện tại trước khi xử lý.
-* Trả về `400 Bad Request` với thông báo rõ trạng thái hiện tại của đối tượng.
-* Không ghi audit log cho các thao tác không hợp lệ.
+- Hệ thống kiểm tra trạng thái hiện tại trước khi xử lý.
+- Trả về `400 Bad Request` với thông báo rõ trạng thái hiện tại của đối tượng.
+- Không ghi audit log cho các thao tác không hợp lệ.
 
 ### 4.3 Dashboard query chậm khi dữ liệu lớn
 
-* Aggregation query có thể chậm khi số lượng order lớn.
-* Hướng xử lý: giới hạn bắt buộc phải có `from_date` và `to_date` trong query params, không cho phép query toàn bộ lịch sử không giới hạn.
-* Trả về `400 Bad Request` nếu thiếu tham số ngày.
+- Aggregation query có thể chậm khi số lượng order lớn.
+- Hướng xử lý: giới hạn bắt buộc phải có `from_date` và `to_date` trong query params, không cho phép query toàn bộ lịch sử không giới hạn.
+- Trả về `400 Bad Request` nếu thiếu tham số ngày.
 
 ---
 
@@ -121,10 +121,10 @@ Bắt buộc có `from_date` và `to_date` khi truy vấn thống kê. Khoảng 
 
 ## 6. Tiêu chí chấp nhận
 
-* Organizer có thể xem danh sách người dùng, lọc theo role và trạng thái.
-* Tài khoản bị khóa không thể đăng nhập hoặc thực hiện giao dịch mới.
-* Organizer có thể hủy concert và toàn bộ người dùng có vé nhận được thông báo.
-* Dashboard hiển thị đúng doanh thu và số vé đã bán theo từng loại vé.
-* Mọi thao tác quản trị đều có audit log với đầy đủ thông tin.
-* Các thao tác không hợp lệ (hủy concert đã hủy, ban user đã ban) bị từ chối với thông báo rõ ràng.
-* Luồng mua vé và soát vé không bị ảnh hưởng trong khi Organizer đang thực hiện các thao tác quản trị.
+- Organizer có thể xem danh sách người dùng, lọc theo role và trạng thái.
+- Tài khoản bị khóa không thể đăng nhập hoặc thực hiện giao dịch mới.
+- Organizer có thể hủy concert và toàn bộ người dùng có vé nhận được thông báo.
+- Dashboard hiển thị đúng doanh thu và số vé đã bán theo từng loại vé.
+- Mọi thao tác quản trị đều có audit log với đầy đủ thông tin.
+- Các thao tác không hợp lệ (hủy concert đã hủy, ban user đã ban) bị từ chối với thông báo rõ ràng.
+- Luồng mua vé và soát vé không bị ảnh hưởng trong khi Organizer đang thực hiện các thao tác quản trị.

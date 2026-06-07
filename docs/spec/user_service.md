@@ -47,6 +47,7 @@ Ngoài chức năng quản lý dữ liệu người dùng, User Service còn ph�
 **Query Parameters:** `page`, `limit`, `role`, `status` (`active` / `banned`)
 
 **Phản hồi (200 OK):**
+
 ```json
 {
   "success": true,
@@ -71,14 +72,17 @@ Ngoài chức năng quản lý dữ liệu người dùng, User Service còn ph�
 **Endpoint:** `PATCH /api/v1/organizer/users/:user_id/status`
 
 **Headers:**
+
 - `Authorization: Bearer <JWT_Token>`
 
 **Request Body:**
+
 ```json
 { "status": "banned", "reason": "Vi phạm chính sách mua vé" }
 ```
 
 **Phản hồi (200 OK):**
+
 ```json
 { "success": true, "message": "Tài khoản đã được cập nhật trạng thái." }
 ```
@@ -90,14 +94,17 @@ Ngoài chức năng quản lý dữ liệu người dùng, User Service còn ph�
 **Endpoint:** `PATCH /api/v1/organizer/users/:user_id/role`
 
 **Headers:**
+
 - `Authorization: Bearer <JWT_Token>`
 
 **Request Body:**
+
 ```json
 { "role": "staff" }
 ```
 
 **Phản hồi (200 OK):**
+
 ```json
 { "success": true, "message": "Role đã được cập nhật." }
 ```
@@ -111,6 +118,7 @@ Ngoài chức năng quản lý dữ liệu người dùng, User Service còn ph�
 **Endpoint:** `POST /api/v1/users/sign-up`
 
 **Request Body:**
+
 ```json
 {
   "username": "abcd",
@@ -119,6 +127,7 @@ Ngoài chức năng quản lý dữ liệu người dùng, User Service còn ph�
 ```
 
 **Phản hồi (201 Created):**
+
 ```json
 {
   "success": true,
@@ -133,6 +142,7 @@ Ngoài chức năng quản lý dữ liệu người dùng, User Service còn ph�
 **Endpoint:** `POST /api/v1/users/sign-in`
 
 **Request Body:**
+
 ```json
 {
   "username": "abcd",
@@ -141,6 +151,7 @@ Ngoài chức năng quản lý dữ liệu người dùng, User Service còn ph�
 ```
 
 **Phản hồi (200 OK):**
+
 ```json
 {
   "success": true,

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { userProxy, authProxy, organizerProxy } from "../proxy/users.proxy.js";
 import { concertProxy, organizerConcertProxy } from "../proxy/concert.proxy.js";
+import { orderProxy } from "../proxy/orders.proxy.js";
 
 const router = Router();
 
@@ -10,6 +11,8 @@ router.use("/api/v1/auth", authProxy);
 
 router.use("/api/v1/concerts", concertProxy);
 router.use("/api/v1/organizer/concerts", organizerConcertProxy);
+
+router.use("/api/v1/orders", orderProxy);
 
 router.get("/", (req, res) => {
   res.json({

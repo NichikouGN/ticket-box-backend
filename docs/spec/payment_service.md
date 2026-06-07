@@ -14,11 +14,11 @@ Payment Service là service trung gian chịu trách nhiệm xử lý toàn bộ
 
 Mock Payment Gateway hỗ trợ 3 kịch bản trong quá trình handshake đầu tiên (có thể cấu hình):
 
-| Kịch bản | Mô tả |
-|---|---|
-| `success` | Gateway phản hồi thành công sau ~500ms |
-| `fail` | Gateway trả về lỗi từ chối giao dịch (4xx) |
-| `timeout` | Gateway không phản hồi trong vòng 10 giây |
+| Kịch bản  | Mô tả                                      |
+| --------- | ------------------------------------------ |
+| `success` | Gateway phản hồi thành công sau ~500ms     |
+| `fail`    | Gateway trả về lỗi từ chối giao dịch (4xx) |
+| `timeout` | Gateway không phản hồi trong vòng 10 giây  |
 
 ---
 
@@ -29,9 +29,11 @@ Mock Payment Gateway hỗ trợ 3 kịch bản trong quá trình handshake đầ
 **Endpoint:** `GET /api/v1/payments/:payment_id`
 
 **Headers:**
+
 - `Authorization: Bearer <JWT_Token>`
 
 **Phản hồi thành công (200 OK):**
+
 ```json
 {
   "success": true,
@@ -50,9 +52,13 @@ Mock Payment Gateway hỗ trợ 3 kịch bản trong quá trình handshake đầ
 
 ## Luồng chính
 
+s
+
 ### Luồng 1: Thanh toán thành công
 
-1. Order Service gửi một job vào BullMQ
+<!-- 1. Order Service gửi một job vào BullMQ -->
+
+1. Order Service gọi Payment Service
 2. Payment Service nhận job, kiểm tra Idempotency Key trong Redis:
    - Nếu key đã tồn tại → trả về kết quả của lần trước (không gọi gateway)
    - Nếu key chưa tồn tại → tiếp tục bước 3
@@ -84,7 +90,7 @@ Mock Payment Gateway hỗ trợ 3 kịch bản trong quá trình handshake đầ
 
 ## Kịch bản lỗi
 
-### Gateway timeout (>10 giây không phản hồi)
+## Gateway timeout (>10 giây không phản hồi)
 
 - Payment Service ngắt kết nối sau đúng 10 giây.
 - Ghi nhận 1 failure vào Circuit Breaker counter.
@@ -105,13 +111,14 @@ Mock Payment Gateway hỗ trợ 3 kịch bản trong quá trình handshake đầ
 
 Circuit Breaker chuyển sang `OPEN` khi có 5 lần thất bại liên tiếp trong vòng 60 giây.
 
-| Trạng thái | Hành vi |
-|---|---|
-| `CLOSED` | Hoạt động bình thường, gọi gateway trực tiếp |
-| `OPEN` | Từ chối toàn bộ request, trả về `503` ngay, không gọi gateway |
+| Trạng thái  | Hành vi                                                                         |
+| ----------- | ------------------------------------------------------------------------------- |
+| `CLOSED`    | Hoạt động bình thường, gọi gateway trực tiếp                                    |
+| `OPEN`      | Từ chối toàn bộ request, trả về `503` ngay, không gọi gateway                   |
 | `HALF-OPEN` | Cho phép 1 request thử nghiệm; nếu thành công → `CLOSED`, nếu thất bại → `OPEN` |
 
 Khi `OPEN`, Payment Service trả về:
+
 ```json
 {
   "success": false,

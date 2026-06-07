@@ -4,10 +4,10 @@
 
 ### Phạm vi
 
-| Vai trò | Quyền hạn |
-|---|---|
-| **Organizer** | Cho phép organizer thêm, xóa concert. Cập nhật các thông tin về concert như ảnh bìa, thời gian, vị trí, các khách mời |
-| **User** | Cho phép User xem thông tin về concert gồm ảnh, thời gian, vị trí, khách mời. Cho phép xem các loại vé (GA, SVIP, VIP, CAT1, CAT2) và số lượng còn lại của từng loại |
+| Vai trò       | Quyền hạn                                                                                                                                                            |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Organizer** | Cho phép organizer thêm, xóa concert. Cập nhật các thông tin về concert như ảnh bìa, thời gian, vị trí, các khách mời                                                |
+| **User**      | Cho phép User xem thông tin về concert gồm ảnh, thời gian, vị trí, khách mời. Cho phép xem các loại vé (GA, SVIP, VIP, CAT1, CAT2) và số lượng còn lại của từng loại |
 
 ### Yêu cầu hiệu năng
 
@@ -31,14 +31,17 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 **Endpoint:** `GET /api/v1/concerts`
 
 **Headers:**
+
 - `Origin`: Cần thiết cho CORS
 - `User-Agent`: Cho backend tối ưu payload cho web và mobile
 
 **Query Parameters:**
+
 - `page`: số nguyên (mặc định 1)
 - `limit`: số nguyên (mặc định 10)
 
 **Phản hồi thành công (200 OK):**
+
 ```json
 {
   "success": true,
@@ -68,10 +71,12 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 **Endpoint:** `GET /api/v1/concerts/:id`
 
 **Headers:**
+
 - `Origin`: Cần thiết cho CORS
 - `User-Agent`: Cho backend tối ưu payload cho web và mobile
 
 **Phản hồi thành công (200 OK):**
+
 ```json
 {
   "success": true,
@@ -93,10 +98,12 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 **Endpoint:** `GET /api/v1/concerts/:id/tickets`
 
 **Headers:**
+
 - `Origin`: Cần thiết cho CORS
 - `User-Agent`: Cho backend tối ưu payload cho web và mobile
 
 **Phản hồi thành công (200 OK):**
+
 ```json
 {
   "success": true,
@@ -129,9 +136,11 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 **Endpoint:** `GET /api/v1/concerts/:id/stock`
 
 **Headers:**
+
 - `Origin`: Cần thiết cho CORS
 
 **Phản hồi thành công (200 OK):**
+
 ```json
 {
   "success": true,
@@ -163,10 +172,12 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 **Endpoint:** `POST /api/v1/organizer/concerts`
 
 **Headers:**
+
 - `Authentication: Bearer <JWT_Token>`
 - `Content-Type: application/json`
 
 **Request Body:**
+
 ```json
 {
   "title": "Anh Trai Say Hi - Đêm Đỉnh Cao",
@@ -184,6 +195,7 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 ```
 
 **Phản hồi thành công (201 Created):**
+
 ```json
 {
   "success": true,
@@ -199,10 +211,12 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 **Endpoint:** `PATCH /api/v1/organizer/concerts/:{concert_id}`
 
 **Headers:**
+
 - `Authentication: Bearer <JWT_Token>`
 - `Content-Type: application/json`
 
 **Request Body:**
+
 ```json
 {
   "title": "Anh Trai Say Hi - Đêm Đỉnh Cao",
@@ -211,6 +225,7 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 ```
 
 **Phản hồi thành công (200 OK):**
+
 ```json
 {
   "success": true,
@@ -225,11 +240,13 @@ Thiết kế cho các tác vụ Read-Heavy. Phải chịu tối thiểu 5,000 RP
 **Endpoint:** `PATCH /api/v1/organizer/concerts/:concert_id/cancel`
 
 **Request Body:**
+
 ```json
 { "reason": "Nghệ sĩ không thể tham dự" }
 ```
 
 **Phản hồi (200 OK):**
+
 ```json
 { "success": true, "message": "Concert đã bị hủy. Thông báo đang được gửi đến người dùng." }
 ```

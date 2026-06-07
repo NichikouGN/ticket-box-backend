@@ -144,9 +144,9 @@ export const ConcertRepository = {
           description: input.concert.description ?? null,
           artist: input.concert.artists[0] ?? input.concert.title,
           venue: input.concert.venue,
-          event_date: input.concert.event_date,
-          cover_image: input.concert.thumbnail_url ?? null,
-          seat_map_svg_url: input.concert.seat_map_svg_url ?? null,
+          event_date: input.concert.eventDate,
+          cover_image: input.concert.thumbnailUrl ?? null,
+          seat_map_svg_url: input.concert.seatMapSvgUrl ?? null,
           status: "published",
         })
         .returning<{ id: string }[]>("id");
@@ -171,8 +171,8 @@ export const ConcertRepository = {
             concert_id: concertId,
             name: ticketType.name,
             price: ticketType.price,
-            total_quantity: ticketType.total_capacity,
-            max_per_user: ticketType.max_per_user,
+            total_quantity: ticketType.totalCapacity,
+            max_per_user: ticketType.maxPerUser,
             sold_quantity: 0,
           })),
         )
@@ -196,11 +196,11 @@ export const ConcertRepository = {
       if (updates.title !== undefined) concertPatch.title = updates.title;
       if (updates.description !== undefined) concertPatch.description = updates.description ?? null;
       if (updates.venue !== undefined) concertPatch.venue = updates.venue;
-      if (updates.event_date !== undefined) concertPatch.event_date = updates.event_date;
-      if (updates.thumbnail_url !== undefined)
-        concertPatch.cover_image = updates.thumbnail_url ?? null;
-      if (updates.seat_map_svg_url !== undefined)
-        concertPatch.seat_map_svg_url = updates.seat_map_svg_url ?? null;
+      if (updates.eventDate !== undefined) concertPatch.event_date = updates.eventDate;
+      if (updates.thumbnailUrl !== undefined)
+        concertPatch.cover_image = updates.thumbnailUrl ?? null;
+      if (updates.seatMapSvgUrl !== undefined)
+        concertPatch.seat_map_svg_url = updates.seatMapSvgUrl ?? null;
 
       if (Object.keys(concertPatch).length > 0) {
         await trx("concerts").where("id", concertId).update(concertPatch);
@@ -220,7 +220,7 @@ export const ConcertRepository = {
         }
       }
 
-      if (updates.ticket_types !== undefined) {
+      if (updates.ticketTypes !== undefined) {
         const existingTicketTypes = await trx("ticket_types")
           .select("id")
           .where("concert_id", concertId);
@@ -229,14 +229,14 @@ export const ConcertRepository = {
         );
         await trx("ticket_types").where("concert_id", concertId).del();
 
-        if (updates.ticket_types.length > 0) {
+        if (updates.ticketTypes.length > 0) {
           await trx("ticket_types").insert(
-            updates.ticket_types.map((ticketType) => ({
+            updates.ticketTypes.map((ticketType) => ({
               concert_id: concertId,
               name: ticketType.name,
               price: ticketType.price,
-              total_quantity: ticketType.total_capacity,
-              max_per_user: ticketType.max_per_user,
+              total_quantity: ticketType.totalCapacity,
+              max_per_user: ticketType.maxPerUser,
               sold_quantity: 0,
             })),
           );

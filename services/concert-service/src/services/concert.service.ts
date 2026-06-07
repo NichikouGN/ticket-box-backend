@@ -71,7 +71,7 @@ export const ConcertService = {
     if (useCache) {
       const cached = parseCachedValue<{
         data: ConcertListItem[];
-        pagination: { current_page: number; total_page: number; total_items: number };
+        pagination: { currentPage: number; totalPages: number; totalItems: number };
       }>((await safeRedisMGet([key]))?.[0]);
 
       if (cached) {
@@ -97,9 +97,9 @@ export const ConcertService = {
     const payload = {
       data: rows.map((row) => toListItem(row as Record<string, unknown>)),
       pagination: {
-        current_page: page,
-        total_page: Math.max(1, Math.ceil(totalItems / limit)),
-        total_items: totalItems,
+        currentPage: page,
+        totalPage: Math.max(1, Math.ceil(totalItems / limit)),
+        totalItems: totalItems,
       },
     };
 
@@ -149,8 +149,8 @@ export const ConcertService = {
     const useCache = !organizerId; // Only use cache for non-organizer requests
     if (useCache) {
       const cached = parseCachedValue<{
-        seat_map_svg_url: string | null;
-        ticket_types: TicketTypeView[];
+        seatMapSvgUrl: string | null;
+        ticketTypes: TicketTypeView[];
       }>((await safeRedisMGet([key]))?.[0]);
 
       if (cached) {
@@ -171,7 +171,7 @@ export const ConcertService = {
       seatMapSvgUrl: ticketsDetails.concert.seat_map_svg_url
         ? String(ticketsDetails.concert.seat_map_svg_url)
         : null,
-      ticket_types: ticketsDetails.ticketTypes.map((ticketType) => ({
+      ticketTypes: ticketsDetails.ticketTypes.map((ticketType) => ({
         id: ticketType.id,
         name: ticketType.name,
         price: ticketType.price,
@@ -199,7 +199,7 @@ export const ConcertService = {
           stock: Number(stock),
         }));
 
-        return { ticket_types: result };
+        return { ticketTypes: result };
       }
     }
 
@@ -215,7 +215,7 @@ export const ConcertService = {
     const stockMap: Record<string, number> = {};
 
     const payload = ticketDetails.ticketTypes.map((ticketType) => {
-      const availableStock = Math.max(0, ticketType.total_quantity - ticketType.sold_quantity);
+      const availableStock = Math.max(0, ticketType.totalQuantity - ticketType.soldQuantity);
       stockMap[ticketType.id] = availableStock;
 
       return {

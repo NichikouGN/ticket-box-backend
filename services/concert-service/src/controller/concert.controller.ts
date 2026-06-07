@@ -28,11 +28,6 @@ export const getConcerts = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       data: result.data,
-      Pagination: {
-        current_page: result.pagination.current_page,
-        total_page: result.pagination.total_page,
-        total_items: result.pagination.total_items,
-      },
     });
   } catch (error) {
     console.error("Error in getConcerts:", error);
