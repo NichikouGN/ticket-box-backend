@@ -129,6 +129,8 @@ export const ConcertRepository = {
     }
 
     const ticketTypes = await this.getTicketTypes(concertId);
+
+    console.log("Fetched concert and ticket types from DB:", { concert, ticketTypes });
     return { concert, ticketTypes };
   },
 

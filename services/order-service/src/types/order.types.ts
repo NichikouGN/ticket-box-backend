@@ -2,6 +2,9 @@ import { z } from "zod";
 
 export const uuidSchema = z.string().uuid();
 
+const paymentMethod = ["stripe"];
+export const paymentMethodSchema = z.enum(paymentMethod);
+
 export const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
@@ -17,7 +20,7 @@ export const createOrderItemSchema = z.object({
 });
 
 export const createOrderSchema = z.object({
-  paymentMethod: z.enum(["momo", "zalopay"]),
+  paymentMethod: paymentMethodSchema,
   data: z.array(createOrderItemSchema).min(1),
 });
 
@@ -28,17 +31,19 @@ export type OrderStatus = "pending" | "paid" | "failed" | "expired";
 
 export type OrderListItem = {
   id: string;
-  user_email: string;
-  concert_title: string;
-  total_amount: number;
+  userEmail: string;
+  concertTitle: string;
+  totalPrice: number;
   status: OrderStatus;
-  created_at: string;
+  createdAt: string;
 };
 
 export type OrderResponse = {
-  order_id: string;
-  total_price: number;
-  payment_deadline: string;
+  status: OrderStatus;
+  orderId: string;
+  totalPrice: number;
+  paymentDeadline: string;
+  paymentUrl: string;
 };
 
 export type TicketTypeCatalogItem = {

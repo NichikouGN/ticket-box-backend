@@ -1,3 +1,9 @@
+/**
+ * Lua scripts for managing stock reservations in Redis.
+ * @description These scripts are used to atomically reserve and release stock for ticket purchases.
+ * It first checks if the requested quantities are available and do not exceed user limits,
+ * then updates the stock and purchased counts accordingly.
+ */
 export const reserveStockLua = `
 local itemCount = tonumber(ARGV[1])
 local argIndex = 2

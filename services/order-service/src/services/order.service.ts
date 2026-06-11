@@ -10,28 +10,30 @@ import type {
 } from "../types/order.types.js";
 import { OrderRepository } from "../repository/order.repository.js";
 import { ConcertClient } from "../utils/concert.client.js";
-import { paymentQueue } from "../queues/payment.queue.js";
 import { orderQueue } from "../queues/order.queue.js";
 import { redis } from "../infrastructure/redis.client.js";
-import { releaseStockLua, reserveStockLua } from "../utils/stock.lua.js";
+import { reserveStockLua, releaseStockLua } from "../utils/stock.lua.js";
 import { PaymentClient } from "../utils/payment.client.js";
+import { paymentQueue } from "../queues/payment.queue.js";
+import { PaymentRepository } from "../repository/payment.repository.js";
 
 const PAYMENT_WINDOW_MINUTES = 10;
 const IDEMPOTENCY_TTL_SECONDS = 60 * 60;
 const RESERVATION_TTL_SECONDS = 15 * 60;
 
+// ---------------- Redis Keys ----------------
 const idempotencyKey = (key: string) => `order:idempotency:${key}`;
 const concertStockKey = (concertId: string) => `catalog:concert:${concertId}:stock`;
 const userPurchasedKey = (userId: string, concertId: string, ticketTypeId: string) =>
   `order:user:${userId}:concert:${concertId}:ticket_type:${ticketTypeId}:purchased`;
 
+// ---------------- Helper Functions ----------------
 const toPaymentDeadline = () =>
   new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000).toISOString();
 
 const getIdempotencyRecord = async (key: string) => {
   try {
     const payload = await redis.get(idempotencyKey(key));
-    console.log("Idempotency record for key", key, ":", payload);
     return payload ? (JSON.parse(payload) as { status: string; response?: OrderResponse }) : null;
   } catch {
     return null;
@@ -40,7 +42,7 @@ const getIdempotencyRecord = async (key: string) => {
 
 const setIdempotencyRecord = async (key: string, payload: unknown) => {
   console.log("Setting idempotency record for key", key, "with payload:", payload);
-  // await redis.set(idempotencyKey(key), JSON.stringify(payload), "EX", IDEMPOTENCY_TTL_SECONDS);
+  await redis.set(idempotencyKey(key), JSON.stringify(payload), "EX", IDEMPOTENCY_TTL_SECONDS);
 };
 
 const deleteIdempotencyRecord = async (key: string) => {
@@ -55,18 +57,7 @@ const ensureConcertCache = async (concertId: string) => {
 
   console.log("Fetched ticket types for concert", concertId, ":", tickets);
   if (hashExists === 0) {
-    const stock = await ConcertClient.getConcertStock(concertId);
-    console.log("Stock data for concert:", stock);
-    const seed: Record<string, string> = {};
-
-    for (const item of stock.ticketTypes) {
-      seed[item.id] = String(item.stock);
-    }
-
-    if (Object.keys(seed).length > 0) {
-      await redis.hset(stockKey, seed);
-      await redis.expire(stockKey, RESERVATION_TTL_SECONDS);
-    }
+    await ConcertClient.getConcertStock(concertId);
   }
 
   return tickets.ticketTypes;
@@ -86,17 +77,22 @@ const buildCatalogMap = (items: TicketTypeCatalogItem[]) => {
   return new Map(items.map((item) => [item.id, item]));
 };
 
+/**
+ * Reserves stock for the specified ticket items by executing a Lua script in Redis to ensure atomicity. It checks the availability of the requested ticket quantities and updates the stock accordingly. If the reservation is successful, it returns without error; otherwise, it throws an AppError indicating that the tickets are sold out or exceed purchase limits.
+ * @param userId ID of the user making the reservation
+ * @param concertId ID of the concert for which tickets are being reserved
+ * @param items List of ticket items to reserve
+ * @param catalogMap Map of ticket types for the concert
+ * @throws AppError if the reservation fails due to sold-out tickets or exceeding purchase limits
+ */
 const reserveStocks = async (
   userId: string,
   concertId: string,
   items: CreateOrderItemInput[],
   catalogMap: Map<string, TicketTypeCatalogItem>,
 ) => {
-  console.log("Reserving stock for order. User:", userId, "Concert:", concertId, "Items:", items);
-  console.log("Current catalog map:", catalogMap);
-  // return null; // --- IGNORE ---
   const keys: string[] = [];
-  const args: string[] = [String(items.length)];
+  const args: string[] = [String(items.length)]; // First argument is the number of items, followed by groups of (ticketTypeId, quantity, maxPerUser) for each item
 
   for (const item of items) {
     const catalogItem = catalogMap.get(item.ticketTypeId);
@@ -118,27 +114,27 @@ const reserveStocks = async (
   }
 };
 
-const rollbackStocks = async (userId: string, concertId: string, items: CreateOrderItemInput[]) => {
-  const keys: string[] = [];
-  const args: string[] = [String(items.length)];
-
-  for (const item of items) {
-    keys.push(concertStockKey(concertId), userPurchasedKey(userId, concertId, item.ticketTypeId));
-    args.push(item.ticketTypeId, String(item.quantity), "0");
-  }
-
-  await redis.eval(releaseStockLua, keys.length, ...keys, ...args);
-};
-
-//------------------------------------------------------------------------------
-
+// ---------------- Main Service Object ----------------
 export const OrderService = {
+  async rollbackStocks(userId: string, concertId: string, items: CreateOrderItemInput[]) {
+    const keys: string[] = [];
+    const args: string[] = [String(items.length)];
+
+    for (const item of items) {
+      keys.push(concertStockKey(concertId), userPurchasedKey(userId, concertId, item.ticketTypeId));
+      args.push(item.ticketTypeId, String(item.quantity), "0");
+    }
+
+    await redis.eval(releaseStockLua, keys.length, ...keys, ...args);
+  },
+
   /**
    * Creates a new order.
    * @param userId user ID of the order creator
    * @param incoming order creation request payload
    * @param idempotencyKeyValue idempotency key for ensuring idempotent requests
    * @returns A promise resolving to the created order response
+   * @throws AppError if the user is unauthorized, if the order is already being processed, if the concert ID is missing, if ticket types are not found, or if there is an error during order creation
    */
   async createOrder(
     userId: string,
@@ -150,9 +146,15 @@ export const OrderService = {
     }
 
     const requestItems = incoming.data;
-
     const concertId = validateSingleConcert(requestItems);
     const existingRecord = await getIdempotencyRecord(idempotencyKeyValue);
+
+    console.log(
+      "[Step 2] Idempotency check result for key",
+      idempotencyKeyValue,
+      ":",
+      existingRecord,
+    );
 
     if (existingRecord?.status === "PROCESSING") {
       throw new AppError("Order is already being processed", 409);
@@ -165,13 +167,12 @@ export const OrderService = {
     if (!concertId) {
       throw new AppError("Concert ID is required", 400);
     }
+    console.log("[Step 3] Setting Idempotency Record for concert:", concertId);
 
     await setIdempotencyRecord(idempotencyKeyValue, { status: "PROCESSING" });
 
     const catalog = await ensureConcertCache(concertId);
-
     const catalogMap = buildCatalogMap(catalog);
-    // console.log("Catalog map for concert", concertId, ":", catalogMap);
     const orderId = crypto.randomUUID();
 
     const totalPrice = requestItems.reduce((sum, item) => {
@@ -182,12 +183,17 @@ export const OrderService = {
       return sum + catalogItem.price * item.quantity;
     }, 0);
 
-    console.log("Total price for order:", totalPrice);
+    console.log("[Step 4] Attempting to reserve stocks for order:", orderId);
 
     await reserveStocks(userId, concertId, requestItems, catalogMap);
+    const outboxEventId = crypto.randomUUID();
 
-    // return { order_id: "dummy", total_price: 0, payment_deadline: toPaymentDeadline() }; // --- IGNORE ---
     try {
+      console.log(
+        "[Step 5] Stocks reserved successfully for order:",
+        orderId,
+        ". Attempting DB transaction to create order and payment intent.",
+      );
       await db.transaction(async (trx) => {
         await OrderRepository.createOrder(trx, {
           id: orderId,
@@ -207,23 +213,39 @@ export const OrderService = {
             unitPrice: catalogMap.get(item.ticketTypeId)?.price ?? 0,
           })),
         );
+
+        await OrderRepository.createPaymentIntent(trx, outboxEventId, {
+          orderId,
+          userId,
+          amount: totalPrice,
+          paymentMethod: incoming.paymentMethod,
+          idempotencyKey: idempotencyKeyValue,
+        });
       });
 
-      const response: OrderResponse = {
-        order_id: orderId,
-        total_price: totalPrice,
-        payment_deadline: toPaymentDeadline(),
-      };
+      console.log(
+        "[Step 6] Order and payment intent created successfully for order:",
+        orderId,
+        ". Adding job to payment queue.",
+      );
+      await paymentQueue.add(
+        "CREATE_PAYMENT",
+        {
+          id: outboxEventId,
+          orderId,
+          userId,
+          amount: totalPrice,
+          paymentMethod: incoming.paymentMethod,
+          idempotencyKey: idempotencyKeyValue,
+        },
+        { removeOnComplete: true },
+      );
 
-      // await paymentQueue.add("PENDING_PAYMENT", {
-      //   order_id: orderId,
-      //   user_id: userId,
-      //   idempotency_key: idempotencyKeyValue,
-      //   amount: totalPrice,
-      //   concert_id: concertId,
-      //   items: requestItems,
-      // });
-
+      console.log(
+        "[Step 7] Job added to payment queue for order:",
+        orderId,
+        ". Scheduling cleanup job for expired order.",
+      );
       await orderQueue.add(
         "CLEANUP_EXPIRED_ORDER",
         {
@@ -236,77 +258,51 @@ export const OrderService = {
         },
       );
 
-      const payment = await PaymentClient.createPayment({
+      console.log(
+        "[Step 8] Order creation process completed successfully for order:",
         orderId,
-        userId,
-        amount: totalPrice,
-        paymentMethod: incoming.paymentMethod,
-        idempotencyKey: idempotencyKeyValue,
-      });
+        ". Returning response to client.",
+      );
+
+      const response: OrderResponse = {
+        status: "pending",
+        orderId: orderId,
+        totalPrice: totalPrice,
+        paymentDeadline: toPaymentDeadline(),
+        paymentUrl: "",
+      };
+
+      console.log("[Step 9] Setting Idempotency Record to COMPLETED for order:", orderId);
 
       await setIdempotencyRecord(idempotencyKeyValue, {
         status: "COMPLETED",
-        response,
+        response: response,
       });
 
       return response;
     } catch (error) {
       await OrderRepository.updateStatus(orderId, "failed");
-      await rollbackStocks(userId, concertId, requestItems);
+      await this.rollbackStocks(userId, concertId, requestItems);
       await deleteIdempotencyRecord(idempotencyKeyValue);
-      console.error("Error creating order:", error);
+      console.error("[Order.Service - createOrder]: Error creating order:", error);
       throw new AppError("Failed to create order", 500);
     }
   },
 
-  async listOrders({
-    page,
-    limit,
-    status,
-    concertId,
-    userId,
-  }: {
-    page: number;
-    limit: number;
-    status?: OrderStatus | undefined;
-    concertId?: string | undefined;
-    userId?: string | undefined;
-  }) {
-    if (page < 1 || limit < 1) {
-      throw new AppError("Page and limit must be positive numbers", 400);
+  /**
+   * Lists orders with pagination and optional filtering by status, concert ID, and user ID.
+   * @param param0 Object containing pagination parameters (page, limit) and optional filters (status, concertId, userId)
+   * @returns A promise resolving to an object containing the list of orders and pagination information
+   * @throws AppError if page or limit parameters are invalid
+   * @throws AppError if there is an error retrieving orders from the repository
+   */
+  async getOrderUrl(orderId: string): Promise<{ paymentUrl: string; status: string }> {
+    const result = await PaymentRepository.getOrderUrl(orderId);
+
+    if (!result) {
+      throw new AppError("Order not found", 404);
     }
 
-    const result = await OrderRepository.listOrders({ page, limit, status, concertId, userId });
-
-    return {
-      data: result.rows,
-      pagination: {
-        current_page: page,
-        total_pages: Math.max(1, Math.ceil(result.totalItems / limit)),
-        total_items: result.totalItems,
-      },
-    };
-  },
-
-  async handleExpiredOrder(orderId: string) {
-    const order = await OrderRepository.findById(orderId);
-    if (!order || order.status !== "pending") {
-      return { ignored: true };
-    }
-
-    const items = await OrderRepository.findOrderItems(orderId);
-    await OrderRepository.updateStatus(orderId, "expired");
-
-    const redisItems = items.map((item) => ({
-      concertId: item.concertId,
-      ticketTypeId: item.ticketTypeId,
-      quantity: item.quantity,
-      price: 0,
-      maxPerUser: 0,
-    })) as CreateOrderItemInput[];
-
-    await rollbackStocks(order.userId, items[0]?.concertId ?? "", redisItems);
-
-    return { ignored: false };
+    return result;
   },
 };

@@ -24,6 +24,43 @@ Mock Payment Gateway hỗ trợ 3 kịch bản trong quá trình handshake đầ
 
 ## API Contracts
 
+### Tạo payment intent
+
+**Endpoint:** `POST /api/v1/payments`
+
+**Headers:**
+
+- `Idempotency-Key: <UUIDv4>` — Bắt buộc
+
+**Request Body:**
+
+```json
+{
+  "orderId": "8b2c6e3c-fa52-474c-83b0-0b6c62bb1e89",
+  "userId": "f2a1a9c0-7e0f-4c44-83e6-7a6a9f16a0f1",
+  "amount": 7000000,
+  "paymentMethod": "momo"
+}
+```
+
+**Phản hồi thành công (201 Created):**
+
+```json
+{
+  "success": true,
+  "message": "Payment initialized successfully.",
+  "data": {
+    "payment_id": "pay-uuid-9999",
+    "order_id": "8b2c6e3c-fa52-474c-83b0-0b6c62bb1e89",
+    "status": "success",
+    "amount": 7000000,
+    "payment_url": "https://mock-payment.local/checkout/pay-uuid-9999",
+    "payment_ref": "MOCK-TXN-20260715-ABC123",
+    "payment_deadline": "2026-07-15T19:15:00Z"
+  }
+}
+```
+
 ### Truy vấn trạng thái giao dịch
 
 **Endpoint:** `GET /api/v1/payments/:payment_id`

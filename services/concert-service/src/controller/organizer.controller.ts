@@ -8,6 +8,12 @@ import {
   uuidParamSchema,
 } from "../types/concert.types.js";
 
+/**
+ * Creates a new concert with the provided details
+ * @param req Request object, expects a JSON body with concert details and authentication for organizer access
+ * @param res Response object, returns the result of concert creation or an error message
+ * @returns Response with status 201 and concert details on success, or appropriate error messages and status codes on failure
+ */
 export const createConcert = async (req: Request, res: Response) => {
   try {
     const parsedBody = createConcertSchema.safeParse(req.body);
@@ -38,6 +44,12 @@ export const createConcert = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Updates the details of a specific concert
+ * @param req Request object, expects a path parameter for concert ID and a JSON body with updated concert details
+ * @param res Response object, returns the result of the update or an error message
+ * @returns Response with status 200 and updated concert details on success, or appropriate error messages and status codes on failure
+ */
 export const updateConcert = async (req: Request, res: Response) => {
   try {
     const parsedParams = uuidParamSchema.safeParse(req.params);
@@ -67,6 +79,12 @@ export const updateConcert = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Cancels a specific concert
+ * @param req Request object, expects a path parameter for concert ID and a JSON body with cancellation details
+ * @param res Response object, returns the result of the cancellation or an error message
+ * @returns Response with status 200 and cancellation confirmation on success, or appropriate error messages and status codes on failure
+ */
 export const cancelConcert = async (req: Request, res: Response) => {
   try {
     const parsedParams = uuidParamSchema.safeParse(req.params);
@@ -105,6 +123,12 @@ export const cancelConcert = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Publishes a specific concert
+ * @param req Request object, expects a path parameter for concert ID and authentication for organizer access
+ * @param res Response object, returns the result of the publication or an error message
+ * @returns Response with status 200 and publication confirmation on success, or appropriate error messages and status codes on failure
+ */
 export const publishConcert = async (req: Request, res: Response) => {
   try {
     const parsedParams = uuidParamSchema.safeParse(req.params);
@@ -131,6 +155,12 @@ export const publishConcert = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Restores a specific concert
+ * @param req Request object, expects a path parameter for concert ID and authentication for organizer access
+ * @param res Response object, returns the result of the restoration or an error message
+ * @returns Response with status 200 and restoration confirmation on success, or appropriate error messages and status codes on failure
+ */
 export const restoreConcert = async (req: Request, res: Response) => {
   try {
     const parsedParams = uuidParamSchema.safeParse(req.params);

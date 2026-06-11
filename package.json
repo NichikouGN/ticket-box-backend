@@ -8,9 +8,11 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "knex": "^3.2.10",
-    "pg": "^8.21.0"
+    "pg": "^8.21.0",
+    "stripe": "^22.2.0"
   },
   "devDependencies": {
+    "@types/stripe": "^8.0.416",
     "ts-node": "^10.9.2"
   }
 }

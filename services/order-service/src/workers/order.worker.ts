@@ -1,8 +1,9 @@
 import { Worker } from "bullmq";
-import { redis } from "../infrastructure/redis.client.js";
 import { bullredis } from "../infrastructure/redis.client.js";
-import { OrderService } from "../services/order.service.js";
-
+import { handleExpiredOrder } from "../jobs/handleExpired.job.js";
+import { handlePaidOrder } from "../jobs/handlePaid.job.js";
+import { handleFailedOrder } from "../jobs/handleFailed.job.js";
+import type { handlePaidType } from "../types/job.types.js";
 let workerStarted = false;
 
 export const startOrderCleanupWorker = () => {
@@ -15,12 +16,23 @@ export const startOrderCleanupWorker = () => {
   const worker = new Worker(
     "order-queue",
     async (job) => {
-      if (job.name !== "CLEANUP_EXPIRED_ORDER") {
+      if (job.name === "CLEANUP_EXPIRED_ORDER") {
+        const { order_id } = job.data as { order_id: string };
+        await handleExpiredOrder(order_id);
         return;
       }
 
-      const { order_id } = job.data as { order_id: string };
-      await OrderService.handleExpiredOrder(order_id);
+      if (job.name === "UPDATE_ORDER_PAID") {
+        const jobData = job.data as handlePaidType;
+        await handlePaidOrder(jobData);
+        return;
+      }
+
+      if (job.name === "UPDATE_ORDER_FAILED") {
+        const jobData = job.data as { order_id: string };
+        await handleFailedOrder(jobData.order_id);
+        return;
+      }
     },
     {
       connection: bullredis.duplicate(),

@@ -3,6 +3,12 @@ import { AppError } from "../types/appError.types.js";
 import type { Request, Response } from "express";
 import { signInSchema, signUpSchema, refreshTokenSchema } from "../types/user.types.js";
 
+/**
+ * Handles user signup
+ * @param req Request object
+ * @param res Response object
+ * @returns Promise resolving to the response
+ */
 export const signup = async (req: Request, res: Response) => {
   try {
     const parssed = signUpSchema.safeParse(req.body);
@@ -26,6 +32,12 @@ export const signup = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Handles user signin
+ * @param req Request object
+ * @param res Response object
+ * @returns Promise resolving to the response
+ */
 export const signin = async (req: Request, res: Response) => {
   try {
     const parssed = signInSchema.safeParse(req.body);
@@ -53,6 +65,12 @@ export const signin = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Requests a new access token using a refresh token
+ * @param req Request object
+ * @param res Response object
+ * @returns Promise resolving to the response
+ */
 export const requestNewAccessToken = async (req: Request, res: Response) => {
   try {
     const parsed = refreshTokenSchema.safeParse(req.body);

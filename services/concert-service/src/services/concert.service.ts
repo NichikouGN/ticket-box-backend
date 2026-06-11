@@ -64,6 +64,16 @@ export const ConcertService = {
     return { redis: getRedisHealth() };
   },
 
+  /**
+   * Lists concerts with pagination and optional filtering by organizer
+   * @param page Page number for pagination
+   * @param limit Number of items per page
+   * @param organizerId Optional ID of the organizer to filter by
+   * @returns Promise resolving to the list of concerts and pagination information
+   * @throws AppError with status 500 for any unexpected errors during retrieval
+   * @throws AppError with status 400 for invalid pagination parameters
+   * @throws AppError with status 404 if no concerts are found for the given page and limit
+   */
   async listConcerts(page: number, limit: number, organizerId?: string) {
     const key = listKey(page, limit);
     const useCache = !organizerId; // Only use cache for non-organizer requests
@@ -110,6 +120,14 @@ export const ConcertService = {
     return payload;
   },
 
+  /**
+   * Retrieves the detail of a specific concert
+   * @param concertId ID of the concert to retrieve
+   * @param organizerId Optional ID of the organizer to filter by
+   * @returns Promise resolving to the concert detail or an error if not found or not published (for non-organizer requests)
+   * @throws AppError with status 404 if concert is not found or not published (for non-organizer requests)
+   * @throws AppError with status 500 for any unexpected errors during retrieval
+   */
   async getConcertDetail(concertId: string, organizerId?: string) {
     const key = detailKey(concertId);
 
@@ -143,6 +161,14 @@ export const ConcertService = {
     return payload;
   },
 
+  /**
+   * Retrieves the ticket details of a specific concert
+   * @param concertId ID of the concert to retrieve ticket details for
+   * @param organizerId Optional ID of the organizer to filter by
+   * @returns Promise resolving to the ticket details of the concert or an error if not found or not published (for non-organizer requests)
+   * @throws AppError with status 404 if ticket details are not found or concert is not published (for non-organizer requests)
+   * @throws AppError with status 500 for any unexpected errors during retrieval
+   */
   async getConcertTicketsDetails(concertId: string, organizerId?: string) {
     const key = ticketsKey(concertId);
 
@@ -185,6 +211,14 @@ export const ConcertService = {
     return payload;
   },
 
+  /**
+   * Retrieves the stock details of a specific concert
+   * @param concertId ID of the concert to retrieve stock details for
+   * @param organizerId Optional ID of the organizer to filter by
+   * @returns Promise resolving to the stock details of the concert or an error if not found or not published (for non-organizer requests)
+   * @throws AppError with status 404 if stock details are not found or concert is not published (for non-organizer requests)
+   * @throws AppError with status 500 for any unexpected errors during retrieval
+   */
   async getConcertStock(concertId: string, organizerId?: string) {
     const key = stockKey(concertId);
     const useCache = !organizerId; // Only use cache for non-organizer requests
@@ -215,7 +249,7 @@ export const ConcertService = {
     const stockMap: Record<string, number> = {};
 
     const payload = ticketDetails.ticketTypes.map((ticketType) => {
-      const availableStock = Math.max(0, ticketType.totalQuantity - ticketType.soldQuantity);
+      const availableStock = Math.max(0, ticketType.total_quantity - ticketType.sold_quantity);
       stockMap[ticketType.id] = availableStock;
 
       return {

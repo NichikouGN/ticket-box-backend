@@ -6,6 +6,12 @@ import crypto from "crypto";
 import type { SignInInput, SignUpInput, RefreshTokenInput } from "../types/user.types.js";
 
 export const AuthService = {
+  /**
+   * Signs up a new user
+   * @param param0 Email, Password and Full Name of the user
+   * @returns Promise resolving when the user is created
+   * @throws AppError if email is already registered or if any other error occurs
+   */
   async signup({ email, password, fullName }: SignUpInput) {
     const existingUser = await UserRepository.findByEmail(email);
     if (existingUser) {
@@ -27,6 +33,12 @@ export const AuthService = {
     });
   },
 
+  /**
+   * Signs in a user
+   * @param param0 Email and Password of the user
+   * @returns Promise resolving to the access and refresh tokens
+   * @throws AppError if email or password is invalid
+   */
   async signin({ email, password }: SignInInput) {
     const user = await UserRepository.findByEmail(email);
 
@@ -46,6 +58,12 @@ export const AuthService = {
     return { accessToken, refreshToken };
   },
 
+  /**
+   * Refreshes the access token using a refresh token
+   * @param param0 Refresh token provided by the client
+   * @returns Promise resolving to a new access token
+   * @throws AppError if the refresh token is invalid or expired
+   */
   async refreshAccessToken({ refreshToken }: RefreshTokenInput) {
     const payload = verifyRefreshToken(refreshToken);
 

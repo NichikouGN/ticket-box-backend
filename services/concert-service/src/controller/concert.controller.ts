@@ -9,6 +9,12 @@ export const getHealth = async (_req: Request, res: Response) => {
   return res.status(200).json({ success: true, data: health });
 };
 
+/**
+ * Retrieves a list of concerts with pagination and optional filtering by organizer
+ * @param req Request object, expects query parameters for pagination and optional authentication for organizer-specific concerts
+ * @param res Response object, returns a paginated list of concerts, optionally filtered by organizer if authenticated
+ * @returns Response with status 200 and a list of concerts on success, or appropriate error messages and status codes on failure
+ */
 export const getConcerts = async (req: Request, res: Response) => {
   try {
     const parsed = listQuerySchema.safeParse(req.query);
@@ -39,6 +45,12 @@ export const getConcerts = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Retrieves the details of a specific concert
+ * @param req Request object, expects a path parameter for concert ID and optional authentication for organizer-specific access
+ * @param res Response object, returns the details of the requested concert or an error message
+ * @returns Response with status 200 and concert details on success, or appropriate error messages and status codes on failure
+ */
 export const getConcertDetail = async (req: Request, res: Response) => {
   try {
     const parsed = uuidParamSchema.safeParse(req.params);
@@ -59,6 +71,12 @@ export const getConcertDetail = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Retrieves the ticket details for a specific concert
+ * @param req Request object, expects a path parameter for concert ID and optional authentication for organizer-specific access
+ * @param res Response object, returns the ticket details of the requested concert or an error message
+ * @returns Response with status 200 and ticket details on success, or appropriate error messages and status codes on failure
+ */
 export const getConcertTickets = async (req: Request, res: Response) => {
   try {
     const parsed = uuidParamSchema.safeParse(req.params);
@@ -79,6 +97,12 @@ export const getConcertTickets = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Retrieves the stock details for a specific concert
+ * @param req Request object, expects a path parameter for concert ID and optional authentication for organizer-specific access
+ * @param res Response object, returns the stock details of the requested concert or an error message
+ * @returns Response with status 200 and stock details on success, or appropriate error messages and status codes on failure
+ */
 export const getConcertStock = async (req: Request, res: Response) => {
   try {
     const parsed = uuidParamSchema.safeParse(req.params);

@@ -12,12 +12,21 @@ import {
 import { notificationQueue } from "../queues/notification.queue.js";
 
 export const OrganizerService = {
+  /**
+   * Creates a new concert with the provided details
+   * @param input input data for creating a concert
+   * @param organizerId ID of the organizer creating the concert
+   * @returns Promise resolving to the result of the creation or an error if the creation fails
+   * @throws AppError with status 400 for invalid input data
+   * @throws AppError with status 401 for unauthorized access
+   * @throws AppError with status 500 for any unexpected errors during creation
+   */
   async createConcert(input: CreateConcertInput, organizerId: string) {
     const result = await ConcertRepository.createConcert(
       {
         concert: input,
         artists: input.artists,
-        ticketTypes: input.ticket_types,
+        ticketTypes: input.ticketTypes,
       },
       organizerId,
     );
@@ -38,6 +47,15 @@ export const OrganizerService = {
     return { concert_id: result.concertId };
   },
 
+  /**
+   * Updates an existing concert with the provided details
+   * @param concertId ID of the concert to update
+   * @param input input data for updating the concert
+   * @returns Promise resolving to the result of the update or an error if the update fails
+   * @throws AppError with status 400 for invalid input data
+   * @throws AppError with status 404 if the concert is not found
+   * @throws AppError with status 500 for any unexpected errors during update
+   */
   async updateConcert(concertId: string, input: UpdateConcertInput) {
     const result = await ConcertRepository.updateConcert(concertId, input);
     if (!result) {
@@ -52,6 +70,16 @@ export const OrganizerService = {
     return null;
   },
 
+  /**
+   * Cancels an existing concert with the provided details
+   * @param concertId ID of the concert to cancel
+   * @param organizerId ID of the organizer canceling the concert
+   * @param reason Optional reason for cancellation
+   * @returns Promise resolving to the result of the cancellation or an error if the cancellation fails
+   * @throws AppError with status 404 if the concert is not found
+   * @throws AppError with status 400 if the concert is not published
+   * @throws AppError with status 500 for any unexpected errors during cancellation
+   */
   async cancelConcert(concertId: string, organizerId: string, reason: string | null) {
     const result = await ConcertRepository.cancelConcert(concertId, organizerId, reason);
     if (!result) {
@@ -78,6 +106,15 @@ export const OrganizerService = {
     return null;
   },
 
+  /**
+   * Publishes an existing concert with the provided details
+   * @param concertId ID of the concert to publish
+   * @param organizerId ID of the organizer publishing the concert
+   * @returns Promise resolving to the result of the publication or an error if the publication fails
+   * @throws AppError with status 404 if the concert is not found
+   * @throws AppError with status 400 if the concert is not in draft status
+   * @throws AppError with status 500 for any unexpected errors during publication
+   */
   async publishConcert(concertId: string, organizerId: string) {
     const result = await ConcertRepository.publishConcert(concertId, organizerId);
     if (!result) {
@@ -94,6 +131,15 @@ export const OrganizerService = {
     return null;
   },
 
+  /**
+   * Restores an existing concert with the provided details
+   * @param concertId ID of the concert to restore
+   * @param organizerId ID of the organizer restoring the concert
+   * @returns Promise resolving to the result of the restoration or an error if the restoration fails
+   * @throws AppError with status 404 if the concert is not found
+   * @throws AppError with status 400 if the concert is not in cancelled status
+   * @throws AppError with status 500 for any unexpected errors during restoration
+   */
   async restoreConcert(concertId: string, organizerId: string) {
     const result = await ConcertRepository.restoreConcert(concertId, organizerId);
     if (!result) {

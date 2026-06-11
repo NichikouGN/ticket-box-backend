@@ -56,7 +56,8 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
   "data": {
     "order_id": "8b2c6e3c-fa52-474c-83b0-0b6c62bb1e89",
     "total_price": 7000000,
-    "payment_deadline": "2026-06-01T10:10:00Z"
+    "payment_deadline": "2026-06-01T10:10:00Z",
+    "payment_url": "https://mock-payment.local/checkout/pay-uuid-9999"
   }
 }
 ```
@@ -111,7 +112,7 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
 4. Đẩy 1 job vào BullMQ:
    - `order-queue: CLEANUP_EXPIRED_ORDER` — delay 10 phút. Một worker sẽ check job và kiểm tra `order_id` và trạng thái trong PostgreSQL. Nếu vẫn là `'pending'`, đưa trạng thái về `'expired'` và đồng thời hoàn lại vé
    <!-- - `payment-queue: PENDING_PAYMENT` — dùng cho Payment Service consume và thực hiện các bước kế tiếp của quá trình giao dịch -->
-5. Gọi payment Service với các thông tin vé đã nhận, payment service trả về url để frontend redirect
+5. Gọi payment Service với các thông tin vé đã nhận, payment service trả về `payment_url` để frontend redirect
 6. Phản hồi `201 Created` về Frontend
 
 ### Luồng 2: Xử lý job CLEANUP_EXPIRED_ORDER

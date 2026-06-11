@@ -18,6 +18,13 @@ export const OrderRepository = {
     return db("orders").where("idempotency_key", idempotencyKey).first();
   },
 
+  /**
+   * Creates a new order within a transactional context.
+   * @param trx Knex transaction object to ensure atomicity of order creation and related operations. This allows for rolling back all changes if any step fails, maintaining data integrity.
+   * @param input Input object containing the necessary data to create an order, including a unique order ID, the user ID of the customer placing the order, an idempotency key to prevent duplicate orders, the total amount for the order, and the initial status of the order.
+   * @returns A promise that resolves to the ID of the newly created order. This ID can be used for further operations related to the order, such as adding order items or processing payments. If the order creation fails, the transaction will be rolled back and an error will be thrown.
+   * @throws AppError if there is an error during the order creation process, such as database errors or validation issues. The error will contain a message and a status code that can be used to inform the client of the failure reason.
+   */
   async createOrder(
     trx: Knex.Transaction,
     input: {
@@ -28,6 +35,7 @@ export const OrderRepository = {
       status: OrderStatus;
     },
   ) {
+    console.log("[Step 5.1] Inserting order record into database with ID:", input.id);
     const inserted = await trx("orders")
       .insert({
         id: input.id,
@@ -42,6 +50,7 @@ export const OrderRepository = {
   },
 
   async createOrderItems(trx: Knex.Transaction, orderId: string, items: OrderItemInput[]) {
+    console.log("[Step 5.2] Inserting order items into database for order:", orderId);
     await trx("order_items").insert(
       items.map((item) => ({
         order_id: orderId,
@@ -52,6 +61,29 @@ export const OrderRepository = {
         line_total: item.unitPrice * item.quantity,
       })),
     );
+  },
+
+  async createPaymentIntent(
+    trx: Knex.Transaction,
+    id: string,
+    payload: {
+      orderId: string;
+      userId: string;
+      amount: number;
+      paymentMethod: string;
+      idempotencyKey: string;
+    },
+  ) {
+    console.log("[Step 5.3] Creating payment intent record in database with ID:", id);
+    await trx("outbox_events").insert({
+      id: id,
+      event_type: "CREATE_PAYMENT",
+      payload: JSON.stringify(payload),
+      status: "pending",
+      retries: 0,
+      created_at: trx.fn.now(),
+      updated_at: trx.fn.now(),
+    });
   },
 
   async updateStatus(orderId: string, status: OrderStatus) {

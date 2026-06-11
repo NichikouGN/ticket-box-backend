@@ -2,6 +2,12 @@ import { AppError } from "../types/appError.types.js";
 import type { Request, Response } from "express";
 import { UserService } from "../services/user.service.js";
 
+/**
+ * Retrieves the profile of the authenticated user
+ * @param req Request object
+ * @param res Response object
+ * @returns Promise resolving to the response
+ */
 export const getProfile = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.userId;

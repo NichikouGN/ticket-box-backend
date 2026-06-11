@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { AppError } from "../types/appError.types.js";
-import { createOrderSchema, listOrdersQuerySchema } from "../types/order.types.js";
+import { createOrderSchema, listOrdersQuerySchema, uuidSchema } from "../types/order.types.js";
 import { OrderService } from "../services/order.service.js";
 
 /**
@@ -12,6 +12,7 @@ import { OrderService } from "../services/order.service.js";
 export const createOrder = async (req: Request, res: Response) => {
   try {
     const parsedBody = createOrderSchema.safeParse(req.body);
+
     if (!parsedBody.success) {
       return res.status(400).json({
         success: false,
@@ -24,11 +25,18 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Idempotency-Key is required" });
     }
 
+    console.log(
+      "[Step 1] Request validated successfully. Creating order with data:",
+      parsedBody.data,
+    );
+
     const result = await OrderService.createOrder(
       req.user?.userId || "",
       parsedBody.data,
       idempotencyKey,
     );
+
+    console.log("Order created successfully:", result);
 
     return res.status(201).json({
       success: true,
@@ -36,7 +44,7 @@ export const createOrder = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (error) {
-    console.error("Error in createOrder controller:", error);
+    console.error("[Order Controller - createOrder]: Error creating order:", error);
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({ success: false, message: error.message });
     }
@@ -51,30 +59,25 @@ export const createOrder = async (req: Request, res: Response) => {
  * @param res - The Express response object.
  * @returns A JSON response containing the list of orders and pagination information.
  */
-export const getOrders = async (req: Request, res: Response) => {
+export const getOrderUrl = async (req: Request, res: Response) => {
   try {
-    const parsedQuery = listOrdersQuerySchema.safeParse(req.query);
-    if (!parsedQuery.success) {
-      return res
-        .status(400)
-        .json({ success: false, message: parsedQuery.error.issues[0]?.message ?? "Invalid query" });
+    const params = uuidSchema.safeParse(req.params.orderId);
+    if (!params.success) {
+      return res.status(400).json({ success: false, message: "Invalid order id" });
     }
 
-    const result = await OrderService.listOrders({
-      page: parsedQuery.data.page,
-      limit: parsedQuery.data.limit,
-      status: parsedQuery.data.status,
-      concertId: parsedQuery.data.concertId,
-      userId: parsedQuery.data.userId,
-    });
+    const orderId = params.data;
+    console.log("orderId:", orderId);
+
+    const result = await OrderService.getOrderUrl(orderId);
+    console.log("Fetched order successfully:", result);
 
     return res.status(200).json({
       success: true,
-      data: result.data,
-      pagination: result.pagination,
+      data: result,
     });
   } catch (error) {
-    console.error("Error in getOrders controller:", error);
+    console.error("[Order Controller - getOrderUrl]: Error fetching order:", error);
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({ success: false, message: error.message });
     }

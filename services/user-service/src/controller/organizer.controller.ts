@@ -7,6 +7,12 @@ import {
   updateUserStatusSchema,
 } from "../types/user.types.js";
 
+/**
+ * Retrieves a list of all users
+ * @param req Request object
+ * @param res Response object
+ * @returns Promise resolving to the response
+ */
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const parsed = listUsersQuerySchema.safeParse(req.query);
@@ -33,6 +39,12 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Updates the role of a user
+ * @param req Request object
+ * @param res Response object
+ * @returns Promise resolving to the response
+ */
 export const updateUserRole = async (req: Request, res: Response) => {
   try {
     const parsed = updateUserRoleSchema.safeParse({ ...req.params, ...req.body });
@@ -58,6 +70,12 @@ export const updateUserRole = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Updates the status of a user
+ * @param req Request object
+ * @param res Response object
+ * @returns Promise resolving to the response
+ */
 export const updateUserStatus = async (req: Request, res: Response) => {
   try {
     const parsed = updateUserStatusSchema.safeParse({ ...req.params, ...req.body });

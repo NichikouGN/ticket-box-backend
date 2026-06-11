@@ -5,6 +5,12 @@ import type { role, status } from "../types/auth.types.js";
 import type { UpdateUserRoleInput, UpdateUserStatusInput } from "../types/user.types.js";
 
 export const OrganizerService = {
+  /**
+   * Retrieves a list of all users with pagination and optional filtering by status and role
+   * @param param0 Page number and limit for pagination, along with optional status and role filters
+   * @returns a paginated list of users matching the specified criteria
+   * @throws AppError if any error occurs during the retrieval process
+   */
   getAllUsers: async ({
     page,
     limit,
@@ -26,6 +32,14 @@ export const OrganizerService = {
     return result;
   },
 
+  /**
+   * Updates the role of a user
+   * @param userId Id of the user making the request (organizer)
+   * @param targetId Id of the user whose role is to be updated
+   * @param role New role for the user
+   * @returns Promise resolving to the updated user
+   * @throws AppError if any error occurs during the update process
+   */
   updateUserRole: async (userId: string, targetId: string, role: role) => {
     if (!userId) {
       throw new AppError("User ID is required", 400);
@@ -43,6 +57,14 @@ export const OrganizerService = {
     return updatedUser;
   },
 
+  /**
+   * Updates the status of a user
+   * @param userId Id of the user making the request (organizer)
+   * @param targetId Id of the user whose status is to be updated
+   * @param status New status for the user
+   * @returns Promise resolving to the updated user
+   * @throws AppError if any error occurs during the update process
+   */
   updateUserStatus: async (userId: string, targetId: string, status: status) => {
     if (!userId) {
       throw new AppError("User ID is required", 400);

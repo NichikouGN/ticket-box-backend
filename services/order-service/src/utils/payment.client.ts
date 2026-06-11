@@ -3,7 +3,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL ?? "http://localhost:3005";
+
 export const PaymentClient = {
+  /**
+   * Creates a payment by sending a request to the payment service.
+   * @param param0 Object containing orderId, userId, amount, paymentMethod, and idempotencyKey for creating a payment
+   * @returns An object containing the payment URL and payment deadline returned from the payment service
+   * @throws AppError if the payment service request fails or returns an invalid
+   */
   async createPayment({
     orderId,
     userId,
@@ -17,7 +24,7 @@ export const PaymentClient = {
     paymentMethod: string;
     idempotencyKey: string;
   }) {
-    const response = await fetch(`${PAYMENT_SERVICE_URL}/payments`, {
+    const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -35,9 +42,22 @@ export const PaymentClient = {
       throw new AppError(`Payment service request failed with status ${response.status}`, 502);
     }
 
-    return (await response.json()) as {
-      paymentUrl: string;
-      paymentDeadline: string;
+    const payload = (await response.json()) as {
+      success: boolean;
+      message: string;
+      data?: {
+        paymentUrl: string;
+        paymentDeadline: string;
+      };
+    };
+
+    if (!payload.data) {
+      throw new AppError("Payment service returned an invalid payload", 502);
+    }
+
+    return {
+      paymentUrl: payload.data.paymentUrl,
+      paymentDeadline: payload.data.paymentDeadline,
     };
   },
 };
