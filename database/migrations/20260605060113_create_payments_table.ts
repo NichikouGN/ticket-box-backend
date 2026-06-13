@@ -19,10 +19,14 @@ export async function up(knex: Knex): Promise<void> {
     table
       .text("status")
       .notNullable()
-      .defaultTo("pending")
-      .checkIn(["pending", "success", "failed", "expired"]);
+      .defaultTo("PROCESSING")
+      .checkIn(["PROCESSING", "PENDING_PAYMENT", "COMPLETED", "FAILED", "EXPIRED"]);
 
-    table.text("payment_ref"); // gateway reference id
+    table.string("payment_session_id").notNullable().unique();
+
+    table.string("payment_intent_id");
+
+    table.text("payment_url").nullable();
 
     table.timestamp("created_at", { useTz: true }).defaultTo(knex.fn.now());
 
@@ -31,7 +35,8 @@ export async function up(knex: Knex): Promise<void> {
     table.index("order_id", "idx_payments_order_id");
     table.index("user_id", "idx_payments_user_id");
     table.index("status", "idx_payments_status");
-    table.index("payment_ref", "idx_payments_payment_ref");
+    table.index("payment_session_id", "idx_payments_payment_session_id");
+    table.index("payment_intent_id", "idx_payments_payment_intent_id");
     table.index("created_at", "idx_payments_created_at");
   });
 }

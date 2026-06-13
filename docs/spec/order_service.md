@@ -83,7 +83,7 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
       "user_email": "user@example.com",
       "concert_title": "Anh Trai Say Hi",
       "total_amount": 7000000,
-      "status": "paid",
+      "status": "COMPLETED",
       "created_at": "2026-07-01T10:00:00Z"
     }
   ],
@@ -110,7 +110,7 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
    - Nếu `FAILED`: Xóa Idempotency Key, trả lỗi `400 Bad Request` (`"Vé đã hết hoặc vượt quá giới hạn mua"`)
    - Nếu `SUCCESS`: Tạo bản ghi với trạng thái `PENDING` trong DB ở table `order`
 4. Đẩy 1 job vào BullMQ:
-   - `order-queue: CLEANUP_EXPIRED_ORDER` — delay 10 phút. Một worker sẽ check job và kiểm tra `order_id` và trạng thái trong PostgreSQL. Nếu vẫn là `'pending'`, đưa trạng thái về `'expired'` và đồng thời hoàn lại vé
+   - `order-queue: CLEANUP_EXPIRED_ORDER` — delay 10 phút. Một worker sẽ check job và kiểm tra `order_id` và trạng thái trong PostgreSQL. Nếu vẫn là `'PENDING'`, đưa trạng thái về `'EXPIRED'` và đồng thời hoàn lại vé
    <!-- - `payment-queue: PENDING_PAYMENT` — dùng cho Payment Service consume và thực hiện các bước kế tiếp của quá trình giao dịch -->
 5. Gọi payment Service với các thông tin vé đã nhận, payment service trả về `payment_url` để frontend redirect
 6. Phản hồi `201 Created` về Frontend
@@ -119,8 +119,8 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
 
 1. Sau delay 10 phút, job cleanup của order xuất hiện trong `order-queue`
 2. Order Cleanup Worker consume job này và check thông tin trong PostgreSQL
-3. Nếu status là `'paid'` hay `'failed'` → ignore job này
-4. Nếu là `'pending'` → set status thành `'expired'`, thực hiện quá trình hoàn lại vé bằng Redis
+3. Nếu status là `'COMPLETED'` hay `'FAILED'` → ignore job này
+4. Nếu là `'PENDING'` → set status thành `'EXPIRED'`, thực hiện quá trình hoàn lại vé bằng Redis
 
 ---
 

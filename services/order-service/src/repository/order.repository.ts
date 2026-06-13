@@ -79,7 +79,7 @@ export const OrderRepository = {
       id: id,
       event_type: "CREATE_PAYMENT",
       payload: JSON.stringify(payload),
-      status: "pending",
+      status: "PENDING",
       retries: 0,
       created_at: trx.fn.now(),
       updated_at: trx.fn.now(),

@@ -13,7 +13,8 @@ export async function seed(knex: Knex): Promise<void> {
       venue: "Saigon Exhibition Center",
       event_date: "2026-08-20T18:00:00+07",
       cover_image: "https://example.com/cover.jpg",
-      status: "upcoming",
+      seat_map_svg_url: "https://example.com/seat-map.svg",
+      status: "PUBLISHED",
     },
   ]);
 }

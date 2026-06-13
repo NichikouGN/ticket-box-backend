@@ -3,7 +3,7 @@ import { PaymentClient } from "../utils/payment.client.js";
 
 const processOutboxEvents = async () => {
   const events = await db("outbox_events")
-    .where({ status: "pending" })
+    .where({ status: "PENDING" })
     .where("retries", "<", 5)
     .orderBy("created_at", "asc")
     .limit(10)
@@ -22,11 +22,11 @@ const handleEvent = async (event: any) => {
 
       await db.transaction(async (trx) => {
         await trx("outbox_events").where("id", event.id).update({
-          status: "processed",
+          status: "PROCESSED",
           updated_at: trx.fn.now(),
         });
         await trx("orders").where("id", event.payload.orderId).update({
-          status: "processed",
+          status: "COMPLETED",
           updated_at: trx.fn.now(),
         });
       });

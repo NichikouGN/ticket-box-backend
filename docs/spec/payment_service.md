@@ -108,7 +108,7 @@ s
    - Cập nhật `status = SUCCESS`, lưu `payment_ref`
    - Ghi nhận thành công vào Circuit Breaker (failure count reset)
 7. Đẩy các job vào BullMQ:
-   - `UPDATE_ORDER_PAID` vào `order-queue` → Order Worker cập nhật `order status = PAID`
+   - `UPDATE_ORDER_COMPLETED` vào `order-queue` → Order Worker cập nhật `order status = COMPLETED`
    - `GENERATE_TICKETS` vào `ticket-queue` → Ticket Worker sinh vé + QR
    - `SEND_ORDER_CONFIRMED` vào `notification-queue` → Notification Worker gửi email + in-app cho user
 

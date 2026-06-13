@@ -5,7 +5,6 @@ import type {
   CreateOrderInput,
   CreateOrderItemInput,
   OrderResponse,
-  OrderStatus,
   TicketTypeCatalogItem,
 } from "../types/order.types.js";
 import { OrderRepository } from "../repository/order.repository.js";
@@ -13,7 +12,6 @@ import { ConcertClient } from "../utils/concert.client.js";
 import { orderQueue } from "../queues/order.queue.js";
 import { redis } from "../infrastructure/redis.client.js";
 import { reserveStockLua, releaseStockLua } from "../utils/stock.lua.js";
-import { PaymentClient } from "../utils/payment.client.js";
 import { paymentQueue } from "../queues/payment.queue.js";
 import { PaymentRepository } from "../repository/payment.repository.js";
 
@@ -201,7 +199,7 @@ export const OrderService = {
           userId,
           idempotencyKey: idempotencyKeyValue,
           totalAmount: totalPrice,
-          status: "pending",
+          status: "PROCESSING",
         });
 
         await OrderRepository.createOrderItems(
@@ -261,7 +259,7 @@ export const OrderService = {
       );
 
       const response: OrderResponse = {
-        status: "pending",
+        status: "PROCESSING",
         orderId: orderId,
         totalPrice: totalPrice,
         paymentDeadline: toPaymentDeadline(),
@@ -277,7 +275,7 @@ export const OrderService = {
 
       return response;
     } catch (error) {
-      await OrderRepository.updateStatus(orderId, "failed");
+      await OrderRepository.updateStatus(orderId, "FAILED");
       await this.rollbackStocks(userId, concertId, requestItems);
       await deleteIdempotencyRecord(idempotencyKeyValue);
       console.error("[Order.Service - createOrder]: Error creating order:", error);

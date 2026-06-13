@@ -9,7 +9,7 @@ export async function seed(knex: Knex): Promise<void> {
       user_id: "3f2d2f6a-6c2b-4b2f-9c5a-222222222222",
       idempotency_key: "order_key_123",
       total_amount: 500000,
-      status: "paid",
+      status: "COMPLETED",
     },
   ]);
 }

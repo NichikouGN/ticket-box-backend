@@ -8,7 +8,7 @@ export const paymentMethodSchema = z.enum(paymentMethod);
 export const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
-  status: z.enum(["pending", "paid", "failed", "expired"]).optional(),
+  status: z.enum(["PROCESSING", "COMPLETED", "FAILED", "EXPIRED"]).optional(),
   concertId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
 });
@@ -27,7 +27,7 @@ export const createOrderSchema = z.object({
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type CreateOrderItemInput = z.infer<typeof createOrderItemSchema>;
 
-export type OrderStatus = "pending" | "paid" | "failed" | "expired";
+export type OrderStatus = "PROCESSING" | "COMPLETED" | "FAILED" | "EXPIRED";
 
 export type OrderListItem = {
   id: string;

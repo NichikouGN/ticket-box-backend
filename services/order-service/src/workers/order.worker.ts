@@ -1,9 +1,9 @@
 import { Worker } from "bullmq";
 import { bullredis } from "../infrastructure/redis.client.js";
 import { handleExpiredOrder } from "../jobs/handleExpired.job.js";
-import { handlePaidOrder } from "../jobs/handlePaid.job.js";
+import { handleCompletedOrder } from "../jobs/handlePaid.job.js";
 import { handleFailedOrder } from "../jobs/handleFailed.job.js";
-import type { handlePaidType } from "../types/job.types.js";
+import type { handleCompletedType } from "../types/job.types.js";
 let workerStarted = false;
 
 export const startOrderCleanupWorker = () => {
@@ -22,9 +22,9 @@ export const startOrderCleanupWorker = () => {
         return;
       }
 
-      if (job.name === "UPDATE_ORDER_PAID") {
-        const jobData = job.data as handlePaidType;
-        await handlePaidOrder(jobData);
+      if (job.name === "UPDATE_ORDER_COMPLETED") {
+        const jobData = job.data as handleCompletedType;
+        await handleCompletedOrder(jobData);
         return;
       }
 

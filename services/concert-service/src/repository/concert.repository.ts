@@ -50,7 +50,7 @@ export const ConcertRepository = {
   async countPublishedConcerts() {
     const result = await db("concerts as c")
       .count<{ count: string }>({ count: "c.id" })
-      .where("c.status", "published")
+      .where("c.status", "PUBLISHED")
       .andWhere("c.event_date", ">=", db.fn.now())
       .first();
 
@@ -60,7 +60,7 @@ export const ConcertRepository = {
     return db("concerts as c")
       .leftJoin("artists as a", "a.concert_id", "c.id")
       .select([...concertColumns, artistAggregation])
-      .where("c.status", "published")
+      .where("c.status", "PUBLISHED")
       .andWhere("c.event_date", ">=", db.fn.now())
       .groupBy(
         "c.id",
@@ -149,7 +149,7 @@ export const ConcertRepository = {
           event_date: input.concert.eventDate,
           cover_image: input.concert.thumbnailUrl ?? null,
           seat_map_svg_url: input.concert.seatMapSvgUrl ?? null,
-          status: "published",
+          status: "PUBLISHED",
         })
         .returning<{ id: string }[]>("id");
 
@@ -259,18 +259,18 @@ export const ConcertRepository = {
         return null;
       }
 
-      if (concert.status !== "published") {
+      if (concert.status !== "PUBLISHED") {
         return { updated: false };
       }
 
-      await trx("concerts").where("id", concertId).update({ status: "cancelled" });
+      await trx("concerts").where("id", concertId).update({ status: "CANCELLED" });
       await trx("audit_logs").insert({
         actor_id: organizerId,
         action: "CANCEL_CONCERT",
         target_type: "concert",
         target_id: concertId,
         old_value: trx.raw("?::jsonb", [JSON.stringify({ status: concert.status })]),
-        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "cancelled" })]),
+        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "CANCELLED" })]),
         reason,
       });
 
@@ -285,18 +285,18 @@ export const ConcertRepository = {
         return null;
       }
 
-      if (concert.status !== "draft") {
+      if (concert.status !== "DRAFT") {
         return { updated: false };
       }
 
-      await trx("concerts").where("id", concertId).update({ status: "published" });
+      await trx("concerts").where("id", concertId).update({ status: "PUBLISHED" });
       await trx("audit_logs").insert({
         actor_id: organizerId,
         action: "PUBLISH_CONCERT",
         target_type: "concert",
         target_id: concertId,
         old_value: trx.raw("?::jsonb", [JSON.stringify({ status: concert.status })]),
-        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "published" })]),
+        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "PUBLISHED" })]),
       });
 
       return { updated: true };
@@ -310,18 +310,18 @@ export const ConcertRepository = {
         return null;
       }
 
-      if (concert.status !== "cancelled") {
+      if (concert.status !== "CANCELLED") {
         return { updated: false };
       }
 
-      await trx("concerts").where("id", concertId).update({ status: "published" });
+      await trx("concerts").where("id", concertId).update({ status: "PUBLISHED" });
       await trx("audit_logs").insert({
         actor_id: organizerId,
         action: "RESTORE_CONCERT",
         target_type: "concert",
         target_id: concertId,
         old_value: trx.raw("?::jsonb", [JSON.stringify({ status: concert.status })]),
-        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "published" })]),
+        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "PUBLISHED" })]),
       });
 
       return { updated: true };

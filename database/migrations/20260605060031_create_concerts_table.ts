@@ -20,11 +20,13 @@ export async function up(knex: Knex): Promise<void> {
 
     table.text("cover_image");
 
+    table.text("seat_map_svg_url");
+
     table
       .text("status")
       .notNullable()
-      .defaultTo("draft")
-      .checkIn(["draft", "published", "cancelled"]);
+      .defaultTo("DRAFT")
+      .checkIn(["DRAFT", "PUBLISHED", "CANCELLED"]);
 
     table.timestamp("created_at", { useTz: true }).defaultTo(knex.fn.now());
 

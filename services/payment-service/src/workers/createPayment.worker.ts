@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 import db from "../db/knex.js";
-import { bullredis } from "../infrastructure/redis.client.js";
+import { bullredis, redis } from "../infrastructure/redis.client.js";
 import { PaymentService } from "../services/payment.service.js";
 import { PaymentRepository } from "../repository/payment.repository.js";
 
@@ -23,7 +23,7 @@ export const createPaymentWorker = async () => {
             .select("*")
             .where("id", job.data.id)
             .where("event_type", "CREATE_PAYMENT")
-            .where("status", "pending")
+            .where("status", "PENDING")
             .forUpdate()
             .skipLocked()
             .first()
@@ -53,16 +53,28 @@ export const createPaymentWorker = async () => {
           await db.transaction(async (trx) => {
             await trx("outbox_events")
               .update({
-                status: "processed",
+                status: "PROCESSED",
                 updated_at: trx.fn.now(),
               })
               .where("id", job.data.id);
 
             await trx("payments").where("order_id", payload.orderId).update({
               payment_url: result.paymentUrl,
+              status: "PENDING_PAYMENT",
               updated_at: trx.fn.now(),
             });
           });
+
+          const redisPublisher = redis.duplicate();
+          await redisPublisher.publish(
+            "order_updates",
+            JSON.stringify({
+              orderId: payload.orderId,
+              status: "PENDING_PAYMENT",
+              paymentUrl: result.paymentUrl,
+            }),
+          );
+          await redisPublisher.quit();
         } catch (error) {
           console.error("Error processing CREATE_PAYMENT job:", error);
           await PaymentRepository.updatePaymentIntentRetries(job.data.id);

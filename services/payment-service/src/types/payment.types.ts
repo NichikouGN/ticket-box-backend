@@ -24,7 +24,7 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 
-export type PaymentStatus = "pending" | "success" | "failed" | "expired";
+export type PaymentStatus = "PROCESSING" | "PENDING_PAYMENT" | "COMPLETED" | "FAILED" | "EXPIRED";
 
 export type CheckoutSessionResponse = {
   sessionId: string;

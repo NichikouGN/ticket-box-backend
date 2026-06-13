@@ -10,8 +10,8 @@ export async function up(knex: Knex): Promise<void> {
     table
       .string("status")
       .notNullable()
-      .defaultTo("pending")
-      .checkIn(["pending", "processed", "failed"]);
+      .defaultTo("PENDING")
+      .checkIn(["PENDING", "PROCESSED", "FAILED"]);
     table.integer("retries").notNullable().defaultTo(0);
     table.timestamp("created_at").defaultTo(knex.fn.now()).notNullable();
     table.timestamp("updated_at").defaultTo(knex.fn.now()).notNullable();

@@ -9,12 +9,12 @@ import type { CreateOrderItemInput } from "../types/order.types.js";
  */
 export const handleExpiredOrder = async (orderId: string) => {
   const order = await OrderRepository.findById(orderId);
-  if (!order || order.status !== "pending") {
+  if (!order || order.status !== "PROCESSING") {
     return { ignored: true };
   }
 
   const items = await OrderRepository.findOrderItems(orderId);
-  await OrderRepository.updateStatus(orderId, "expired");
+  await OrderRepository.updateStatus(orderId, "EXPIRED");
 
   const redisItems = items.map((item) => ({
     concertId: item.concertId,

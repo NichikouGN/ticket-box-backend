@@ -16,9 +16,9 @@ export async function up(knex: Knex): Promise<void> {
 
     table.text("message").notNullable();
 
-    table.text("status").notNullable().defaultTo("pending").checkIn(["pending", "sent", "failed"]);
+    table.text("status").notNullable().defaultTo("PENDING").checkIn(["PENDING", "SENT", "FAILED"]);
 
-    table.text("user_status").notNullable().defaultTo("unread").checkIn(["read", "unread"]);
+    table.text("user_status").notNullable().defaultTo("UNREAD").checkIn(["READ", "UNREAD"]);
 
     table.timestamp("created_at", { useTz: true }).defaultTo(knex.fn.now());
 

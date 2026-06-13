@@ -3,6 +3,8 @@ import morgan from "morgan";
 import orderRoutes from "./routes/order.routes.js";
 import { startOrderCleanupWorker } from "./workers/order.worker.js";
 import { getRedisHealth } from "./infrastructure/redis.client.js";
+import { Redis } from "ioredis";
+import type { Request, Response } from "express";
 
 const app = express();
 const PORT = Number(process.env.PORT || 3004);
@@ -26,6 +28,27 @@ app.use("/", orderRoutes);
 app.use((req, res) => {
   console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);
   res.status(404).json({ success: false, message: "Not Found" });
+});
+
+export const activeSSEConnections = new Map<string, Response>();
+const redisSubcriber = new Redis("redis://localhost:6379");
+
+redisSubcriber.subscribe("order_updates", (err) => {
+  if (err) {
+    console.error("Failed to subscribe to order_updates channel:", err);
+  }
+});
+
+redisSubcriber.on("message", (channel, message) => {
+  if (channel === "order_updates") {
+    const { orderId, status, paymentUrl } = JSON.parse(message);
+    const clientStream = activeSSEConnections.get(orderId);
+    if (clientStream) {
+      clientStream.write(`event: ORDER_UPDATED\n`);
+      clientStream.write(`data: ${JSON.stringify({ status, paymentUrl })}\n\n`);
+      clientStream.end();
+    }
+  }
 });
 
 app.listen(PORT, () => {

@@ -92,7 +92,7 @@ CREATE TABLE orders (
     idempotency_key TEXT UNIQUE NOT NULL,      -- Cơ chế chống tạo trùng đơn hàng
     total_amount    INTEGER NOT NULL,
     status          TEXT NOT NULL DEFAULT 'pending'
-                    CHECK (status IN ('pending', 'paid', 'failed', 'expired')),
+                    CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'EXPIRED')),
     created_at      TIMESTAMPTZ DEFAULT now(),
     updated_at      TIMESTAMPTZ DEFAULT now()
 );
@@ -193,8 +193,8 @@ CREATE TABLE artists (
     name       TEXT NOT NULL,
     bio        TEXT,                           -- Nội dung tiểu sử chính thức đã duyệt phát hành
     bio_draft  TEXT,                           -- Nội dung nháp do AI khởi tạo, chờ ban tổ chức review
-    bio_status TEXT NOT NULL DEFAULT 'none'
-               CHECK (bio_status IN ('none', 'pending_review', 'published')),
+    bio_status TEXT NOT NULL DEFAULT 'PENDING_REVIEW'
+               CHECK (bio_status IN ('PENDING_REVIEW', 'ACCEPTED', 'REJECTED')),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );

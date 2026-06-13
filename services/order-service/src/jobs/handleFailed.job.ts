@@ -8,12 +8,12 @@ import type { CreateOrderItemInput } from "../types/order.types.js";
  */
 export const handleFailedOrder = async (orderId: string) => {
   const order = await OrderRepository.findById(orderId);
-  if (!order || order.status !== "pending") {
+  if (!order || order.status !== "PROCESSING") {
     return { ignored: true };
   }
 
   const items = await OrderRepository.findOrderItems(orderId);
-  await OrderRepository.updateStatus(orderId, "failed");
+  await OrderRepository.updateStatus(orderId, "FAILED");
 
   const redisItems = items.map((item) => ({
     concertId: item.concertId,

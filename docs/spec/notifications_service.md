@@ -152,7 +152,7 @@ SELECT * FROM notifications WHERE user_id = :{user_id}
 
 (buffer 1 giờ để tránh bỏ sót do drift)
 
-3. Với mỗi concert, query danh sách users có order status = 'paid' liên kết với concert đó
+3. Với mỗi concert, query danh sách users có order status = 'COMPLETED' liên kết với concert đó
 4. Với mỗi user, kiểm tra đã gửi REMINDER_24H cho concert này chưa:
    - Nếu rồi → bỏ qua
    - Nếu chưa → đẩy job vào BullMQ queue

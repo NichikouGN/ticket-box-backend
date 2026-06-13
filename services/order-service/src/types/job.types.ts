@@ -1,4 +1,4 @@
-export type handlePaidType = {
+export type handleCompletedType = {
   paymentId: string;
   orderId: string;
   userId: string;

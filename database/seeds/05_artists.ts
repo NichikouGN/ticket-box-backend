@@ -10,7 +10,7 @@ export async function seed(knex: Knex): Promise<void> {
       name: "DJ Alpha",
       bio: "International DJ known for EDM sets",
       bio_draft: null,
-      bio_status: "published",
+      bio_status: "PUBLISHED",
     },
     {
       id: "9b1c2d3e-4f5a-4b6c-8d9e-000000000012",
@@ -18,7 +18,7 @@ export async function seed(knex: Knex): Promise<void> {
       name: "Singer Beta",
       bio: null,
       bio_draft: "Rising pop artist from Vietnam",
-      bio_status: "pending_review",
+      bio_status: "PENDING_REVIEW",
     },
   ]);
 }

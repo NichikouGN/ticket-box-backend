@@ -27,6 +27,7 @@ export const PaymentRepository = {
       amount: number;
       paymentMethod: string;
       idempotencyKey: string;
+      paymentSessionId: string;
       status: PaymentStatus;
     },
   ) {
@@ -39,6 +40,7 @@ export const PaymentRepository = {
         amount: input.amount,
         payment_method: input.paymentMethod,
         idempotency_key: input.idempotencyKey,
+        payment_session_id: input.paymentSessionId,
         status: input.status,
       })
       .returning("*")) as PaymentRecord[];

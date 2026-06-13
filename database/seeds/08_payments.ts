@@ -11,8 +11,10 @@ export async function seed(knex: Knex): Promise<void> {
       amount: 500000,
       payment_method: "momo",
       idempotency_key: "payment_key_123",
-      status: "success",
-      payment_ref: "MOMO_TXN_ABC_001",
+      status: "COMPLETED",
+      payment_session_id: "MOMO_TXN_ABC_001",
+      payment_intent_id: "pi_123456789",
+      payment_url: "https://example.com/payment/123",
     },
   ]);
 }

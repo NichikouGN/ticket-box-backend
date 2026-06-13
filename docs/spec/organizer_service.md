@@ -48,9 +48,9 @@ Organizer Service cung cấp giao diện và API quản trị dành riêng cho O
       }
     ],
     "orders_by_status": {
-      "paid": 1150,
-      "failed": 35,
-      "expired": 15
+      "COMPLETED": 1150,
+      "FAILED": 35,
+      "EXPIRED": 15
     }
   }
 }
@@ -65,7 +65,7 @@ Organizer Service cung cấp giao diện và API quản trị dành riêng cho O
 1. Organizer gửi `GET /api/v1/organizer/dashboard` với query params.
 2. Middleware xác thực JWT, kiểm tra role = ORGANIZER.
 3. Organizer Service thực hiện aggregation query trên PostgreSQL:
-   - `SUM(total_amount) WHERE status = 'paid'`
+   - `SUM(total_amount) WHERE status = 'COMPLETED'`
    - `GROUP BY ticket_type, status`
    - Lọc theo concert_id và khoảng thời gian nếu có.
 
@@ -78,7 +78,7 @@ Organizer Service cung cấp giao diện và API quản trị dành riêng cho O
 ### 4.1 Hủy concert đã có người mua vé
 
 - Đây là luồng bình thường, không phải lỗi — hủy concert vẫn được phép dù đã bán vé.
-- Hệ thống tự động trigger refund cho toàn bộ order paid qua Background Worker.
+- Hệ thống tự động trigger refund cho toàn bộ order COMPLETED qua Background Worker.
 - Organizer nhận cảnh báo trong response: số lượng order sẽ được refund.
 
 ### 4.2 Organizer cố tình thao tác trùng (hủy concert đã hủy, ban user đã bị ban)

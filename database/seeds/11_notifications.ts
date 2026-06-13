@@ -11,8 +11,8 @@ export async function seed(knex: Knex): Promise<void> {
       type: "ORDER_CONFIRM",
       title: "Your order is confirmed",
       message: "Thank you for purchasing ticket to Summer Beats 2026",
-      status: "sent",
-      user_status: "unread",
+      status: "SENT",
+      user_status: "UNREAD",
     },
   ]);
 }

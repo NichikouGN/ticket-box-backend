@@ -17,8 +17,8 @@ export async function up(knex: Knex): Promise<void> {
     table
       .text("bio_status")
       .notNullable()
-      .defaultTo("none")
-      .checkIn(["none", "pending_review", "published"]);
+      .defaultTo("PENDING_REVIEW")
+      .checkIn(["PENDING_REVIEW", "PUBLISHED", "REJECTED"]);
 
     table.timestamp("created_at", { useTz: true }).defaultTo(knex.fn.now());
 

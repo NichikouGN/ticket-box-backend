@@ -149,7 +149,7 @@ export const ConcertService = {
     console.log("Concert status:", concert.status);
     console.log("!Use cache:", organizerId);
 
-    if (useCache && String(concert.status) !== "published") {
+    if (useCache && String(concert.status) !== "PUBLISHED") {
       throw new AppError("Concert not found", 404);
     }
 
@@ -189,7 +189,7 @@ export const ConcertService = {
       throw new AppError("Tickets details not found", 404);
     }
 
-    if (useCache && String(ticketsDetails.concert.status) !== "published") {
+    if (useCache && String(ticketsDetails.concert.status) !== "PUBLISHED") {
       throw new AppError("Tickets details not found", 404);
     }
 
@@ -242,7 +242,7 @@ export const ConcertService = {
       throw new AppError("Tickets details not found", 404);
     }
 
-    if (useCache && String(ticketDetails.concert.status) !== "published") {
+    if (useCache && String(ticketDetails.concert.status) !== "PUBLISHED") {
       throw new AppError("Tickets details not found", 404);
     }
 
