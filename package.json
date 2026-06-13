@@ -5,6 +5,15 @@
     "packages/*",
     "services/*"
   ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:stripe\" \"npm run dev:api-gateway\" \"npm run dev:user-service\" \"npm run dev:concert-service\" \"npm run dev:order-service\" \"npm run dev:payment-service\"",
+    "dev:stripe": "stripe listen --forward-to http://localhost:3004",
+    "dev:api-gateway": "cd services/api-gateway && tsx watch src/index.ts",
+    "dev:user-service": "cd services/user-service && tsx watch src/index.ts",
+    "dev:concert-service": "cd services/concert-service && tsx watch src/index.ts",
+    "dev:payment-service": "cd services/payment-service && tsx watch src/index.ts",
+    "dev:order-service": "cd services/order-service && tsx watch src/index.ts"
+  },
   "dependencies": {
     "dotenv": "^17.4.2",
     "knex": "^3.2.10",
@@ -13,6 +22,7 @@
   },
   "devDependencies": {
     "@types/stripe": "^8.0.416",
+    "concurrently": "^10.0.3",
     "ts-node": "^10.9.2"
   }
 }

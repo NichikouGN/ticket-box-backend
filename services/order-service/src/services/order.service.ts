@@ -46,6 +46,7 @@ const setIdempotencyRecord = async (key: string, payload: unknown) => {
 };
 
 const deleteIdempotencyRecord = async (key: string) => {
+  console.log("Deleting idempotency record for key", key);
   await redis.del(idempotencyKey(key));
 };
 
@@ -186,7 +187,6 @@ export const OrderService = {
     console.log("[Step 4] Attempting to reserve stocks for order:", orderId);
 
     await reserveStocks(userId, concertId, requestItems, catalogMap);
-    const outboxEventId = crypto.randomUUID();
 
     try {
       console.log(
@@ -194,6 +194,7 @@ export const OrderService = {
         orderId,
         ". Attempting DB transaction to create order and payment intent.",
       );
+      let outboxEventId = crypto.randomUUID();
       await db.transaction(async (trx) => {
         await OrderRepository.createOrder(trx, {
           id: orderId,
@@ -232,11 +233,6 @@ export const OrderService = {
         "CREATE_PAYMENT",
         {
           id: outboxEventId,
-          orderId,
-          userId,
-          amount: totalPrice,
-          paymentMethod: incoming.paymentMethod,
-          idempotencyKey: idempotencyKeyValue,
         },
         { removeOnComplete: true },
       );
@@ -285,7 +281,7 @@ export const OrderService = {
       await this.rollbackStocks(userId, concertId, requestItems);
       await deleteIdempotencyRecord(idempotencyKeyValue);
       console.error("[Order.Service - createOrder]: Error creating order:", error);
-      throw new AppError("Failed to create order", 500);
+      throw error;
     }
   },
 

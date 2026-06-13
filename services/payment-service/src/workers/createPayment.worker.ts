@@ -11,24 +11,41 @@ export const createPaymentWorker = async () => {
       if (job.name === "CREATE_PAYMENT") {
         console.log("[Step 10] Processing CREATE_PAYMENT job for order:", job.data.orderId);
         try {
-          const { orderId, userId, amount, paymentMethod, idempotencyKey } = job.data as {
-            orderId: string;
-            userId: string;
-            amount: number;
-            paymentMethod: string;
-            idempotencyKey: string;
-          };
+          // const { orderId, userId, amount, paymentMethod, idempotencyKey } = job.data as {
+          //   orderId: string;
+          //   userId: string;
+          //   amount: number;
+          //   paymentMethod: string;
+          //   idempotencyKey: string;
+          // };
+
+          const payload = await db("outbox_events")
+            .select("*")
+            .where("id", job.data.id)
+            .where("event_type", "CREATE_PAYMENT")
+            .where("status", "pending")
+            .forUpdate()
+            .skipLocked()
+            .first()
+            .then(async (event) => {
+              if (!event) {
+                console.error(`Outbox event not found for id: ${job.data.id}`);
+                throw new Error("Outbox event not found");
+              }
+              const payload = event.payload;
+              return payload;
+            });
 
           const result = await PaymentService.createPayment({
-            orderId,
-            userId,
-            amount,
-            paymentMethod,
-            idempotencyKey,
+            orderId: payload.orderId,
+            userId: payload.userId,
+            amount: payload.amount,
+            paymentMethod: payload.paymentMethod,
+            idempotencyKey: payload.idempotencyKey,
           });
           console.log(
             "[Step 15] Payment created successfully for order:",
-            orderId,
+            payload.orderId,
             "Payment URL:",
             result.paymentUrl,
           );
@@ -41,7 +58,7 @@ export const createPaymentWorker = async () => {
               })
               .where("id", job.data.id);
 
-            await trx("payments").where("order_id", orderId).update({
+            await trx("payments").where("order_id", payload.orderId).update({
               payment_url: result.paymentUrl,
               updated_at: trx.fn.now(),
             });
