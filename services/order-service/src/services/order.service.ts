@@ -14,6 +14,9 @@ import { redis } from "../infrastructure/redis.client.js";
 import { reserveStockLua, releaseStockLua } from "../utils/stock.lua.js";
 import { paymentQueue } from "../queues/payment.queue.js";
 import { PaymentRepository } from "../repository/payment.repository.js";
+import logger from "../utils/logger.js";
+import { UserRepository } from "../repository/user.repository.js";
+import { userClient } from "../clients/user.client.js";
 
 const PAYMENT_WINDOW_MINUTES = 10;
 const IDEMPOTENCY_TTL_SECONDS = 60 * 60;
@@ -39,12 +42,12 @@ const getIdempotencyRecord = async (key: string) => {
 };
 
 const setIdempotencyRecord = async (key: string, payload: unknown) => {
-  console.log("Setting idempotency record for key", key, "with payload:", payload);
+  logger.info({ idempotencyKey: key, payload }, "Setting idempotency record in Redis");
   await redis.set(idempotencyKey(key), JSON.stringify(payload), "EX", IDEMPOTENCY_TTL_SECONDS);
 };
 
 const deleteIdempotencyRecord = async (key: string) => {
-  console.log("Deleting idempotency record for key", key);
+  logger.info({ idempotencyKey: key }, "Deleting idempotency record from Redis");
   await redis.del(idempotencyKey(key));
 };
 
@@ -54,7 +57,6 @@ const ensureConcertCache = async (concertId: string) => {
 
   const tickets = await ConcertClient.getConcertTickets(concertId);
 
-  console.log("Fetched ticket types for concert", concertId, ":", tickets);
   if (hashExists === 0) {
     await ConcertClient.getConcertStock(concertId);
   }
@@ -140,19 +142,40 @@ export const OrderService = {
     incoming: CreateOrderInput,
     idempotencyKeyValue: string,
   ): Promise<OrderResponse> {
+    logger.info(
+      "===================== [OrderService - Service - createOrder] =====================",
+    );
+
     if (!userId) {
       throw new AppError("Unauthorized", 401);
     }
 
     const requestItems = incoming.data;
     const concertId = validateSingleConcert(requestItems);
+    if (!concertId) {
+      throw new AppError("Concert ID is required", 400);
+    }
+
+    // const user = await UserRepository.getUserById(userId);
+
+    const userResponse = await userClient.get(`/users/${userId}`).catch((error) => {
+      logger.error(
+        { userId, idempotencyKey: idempotencyKeyValue, error },
+        "Error fetching user data from user service:",
+      );
+    });
+
+    const user = userResponse?.data?.data;
+
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
     const existingRecord = await getIdempotencyRecord(idempotencyKeyValue);
 
-    console.log(
-      "[Step 2] Idempotency check result for key",
-      idempotencyKeyValue,
-      ":",
-      existingRecord,
+    logger.info(
+      { userId, idempotencyKey: idempotencyKeyValue, existingRecord },
+      "Idempotency check result",
     );
 
     if (existingRecord?.status === "PROCESSING") {
@@ -163,10 +186,10 @@ export const OrderService = {
       return existingRecord.response;
     }
 
-    if (!concertId) {
-      throw new AppError("Concert ID is required", 400);
-    }
-    console.log("[Step 3] Setting Idempotency Record for concert:", concertId);
+    logger.info(
+      { userId, idempotencyKey: idempotencyKeyValue, concertId },
+      "Setting Idempotency Record for concert:",
+    );
 
     await setIdempotencyRecord(idempotencyKeyValue, { status: "PROCESSING" });
 
@@ -182,16 +205,23 @@ export const OrderService = {
       return sum + catalogItem.price * item.quantity;
     }, 0);
 
-    console.log("[Step 4] Attempting to reserve stocks for order:", orderId);
+    logger.info(
+      { userId, idempotencyKey: idempotencyKeyValue, orderId },
+      "Attempting to reserve stocks for order:",
+    );
 
     await reserveStocks(userId, concertId, requestItems, catalogMap);
 
+    logger.info(
+      { userId, idempotencyKey: idempotencyKeyValue, orderId },
+      "Stocks reserved successfully for order:",
+    );
     try {
-      console.log(
-        "[Step 5] Stocks reserved successfully for order:",
-        orderId,
-        ". Attempting DB transaction to create order and payment intent.",
+      logger.info(
+        { userId, idempotencyKey: idempotencyKeyValue, orderId },
+        "Creating order and payment intent in database",
       );
+
       let outboxEventId = crypto.randomUUID();
       await db.transaction(async (trx) => {
         await OrderRepository.createOrder(trx, {
@@ -222,24 +252,32 @@ export const OrderService = {
         });
       });
 
-      console.log(
-        "[Step 6] Order and payment intent created successfully for order:",
-        orderId,
-        ". Adding job to payment queue.",
-      );
       await paymentQueue.add(
         "CREATE_PAYMENT",
         {
-          id: outboxEventId,
+          eventId: outboxEventId,
+          orderId,
+          userId,
+          amount: totalPrice,
+          paymentMethod: incoming.paymentMethod,
+          idempotencyKey: idempotencyKeyValue,
         },
-        { removeOnComplete: true },
+        {
+          removeOnComplete: true,
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 5_000,
+          },
+        },
       );
 
-      console.log(
-        "[Step 7] Job added to payment queue for order:",
+      logger.info(
+        { userId, idempotencyKey: idempotencyKeyValue, orderId },
+        "Job added to payment queue for order:",
         orderId,
-        ". Scheduling cleanup job for expired order.",
       );
+
       await orderQueue.add(
         "CLEANUP_EXPIRED_ORDER",
         {
@@ -252,10 +290,10 @@ export const OrderService = {
         },
       );
 
-      console.log(
-        "[Step 8] Order creation process completed successfully for order:",
+      logger.info(
+        { userId, idempotencyKey: idempotencyKeyValue, orderId },
+        "Job added to order queue for cleaning up expired order:",
         orderId,
-        ". Returning response to client.",
       );
 
       const response: OrderResponse = {
@@ -266,19 +304,26 @@ export const OrderService = {
         paymentUrl: "",
       };
 
-      console.log("[Step 9] Setting Idempotency Record to COMPLETED for order:", orderId);
+      logger.info(
+        { userId, idempotencyKey: idempotencyKeyValue, orderId },
+        "Setting Idempotency Record to PENDING_PAYMENT for order:",
+        orderId,
+      );
 
       await setIdempotencyRecord(idempotencyKeyValue, {
-        status: "COMPLETED",
+        status: "PROCESSING",
         response: response,
       });
 
       return response;
     } catch (error) {
+      logger.error(
+        { userId, idempotencyKey: idempotencyKeyValue, orderId, error },
+        "Error creating order:",
+      );
       await OrderRepository.updateStatus(orderId, "FAILED");
       await this.rollbackStocks(userId, concertId, requestItems);
       await deleteIdempotencyRecord(idempotencyKeyValue);
-      console.error("[Order.Service - createOrder]: Error creating order:", error);
       throw error;
     }
   },

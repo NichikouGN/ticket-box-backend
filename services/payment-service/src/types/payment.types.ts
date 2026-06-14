@@ -43,6 +43,8 @@ export type PaymentRecord = {
   idempotency_key: string;
   status: PaymentStatus;
   payment_session_id: string | null;
+  payment_intent_id: string | null;
+  payment_url: string | null;
   created_at: string;
   updated_at: string;
 };

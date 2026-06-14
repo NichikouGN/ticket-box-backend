@@ -1,6 +1,7 @@
 import type { Knex } from "knex";
 import db from "../db/knex.js";
 import type { PaymentRecord, PaymentStatus } from "../types/payment.types.js";
+import logger from "../utils/logger.js";
 
 export const PaymentRepository = {
   async findById(paymentId: string) {
@@ -28,10 +29,15 @@ export const PaymentRepository = {
       paymentMethod: string;
       idempotencyKey: string;
       paymentSessionId: string;
+      paymentUrl: string;
       status: PaymentStatus;
     },
   ) {
-    console.log("[Step 11.1] Creating payment record in database with ID:", input.id);
+    logger.info(
+      { orderId: input.orderId, userId: input.userId, idempotencyKey: input.idempotencyKey },
+      "Creating payment record in database for order ID:",
+      input.orderId,
+    );
     const [payment] = (await trx("payments")
       .insert({
         id: input.id,
@@ -41,6 +47,7 @@ export const PaymentRepository = {
         payment_method: input.paymentMethod,
         idempotency_key: input.idempotencyKey,
         payment_session_id: input.paymentSessionId,
+        payment_url: input.paymentUrl,
         status: input.status,
       })
       .returning("*")) as PaymentRecord[];
@@ -49,26 +56,24 @@ export const PaymentRepository = {
   },
 
   async updatePaymentIntentRetries(intentId: string) {
+    logger.info({ intentId }, "Updating payment intent retries for intent ID:", intentId);
     await db("outbox_events")
       .where("id", intentId)
       .increment("retries", 1)
-      .update({ updated_at: db.fn.now() + "30 seconds" });
+      .update({ next_retry_at: db.raw("NOW() + INTERVAL '30 seconds'") });
   },
 
-  async updateStatus(paymentId: string, status: PaymentStatus, paymentRef?: string | null) {
-    await db("payments")
-      .where("id", paymentId)
-      .update({
-        status,
-        payment_session_id: paymentRef ?? null,
-        updated_at: db.fn.now(),
-      });
-  },
-
-  async updateSessionId(paymentId: string, sessionId: string) {
-    console.log("[Step 14] Updating payment record with session ID for payment ID:", paymentId);
-    await db("payments")
-      .where("id", paymentId)
-      .update({ payment_session_id: sessionId, updated_at: db.fn.now() });
+  async updatePaymentStatus(paymentId: string, status: PaymentStatus) {
+    logger.info(
+      { paymentId, status },
+      "Updating payment status for payment ID:",
+      paymentId,
+      "to status:",
+      status,
+    );
+    await db("payments").where("id", paymentId).update({
+      status,
+      updated_at: db.fn.now(),
+    });
   },
 };

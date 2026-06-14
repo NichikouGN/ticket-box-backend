@@ -1,10 +1,12 @@
 import express from "express";
 import morgan from "morgan";
 import orderRoutes from "./routes/order.routes.js";
-import { startOrderCleanupWorker } from "./workers/order.worker.js";
 import { getRedisHealth } from "./infrastructure/redis.client.js";
 import { Redis } from "ioredis";
 import type { Request, Response } from "express";
+import { startOrderCleanupWorker } from "./workers/orderCleanup.worker.js";
+import { processOutboxWorker } from "./workers/processOutbox.worker.js";
+import internalRoutes from "./routes/internal.routes.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 3004);
@@ -23,6 +25,7 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.use("/internal", internalRoutes);
 app.use("/", orderRoutes);
 
 app.use((req, res) => {
@@ -53,5 +56,6 @@ redisSubcriber.on("message", (channel, message) => {
 
 app.listen(PORT, () => {
   startOrderCleanupWorker();
+  setInterval(processOutboxWorker, 5000);
   console.log(`Order Service listening on ${PORT}`);
 });

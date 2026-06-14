@@ -14,12 +14,12 @@ export async function up(knex: Knex): Promise<void> {
       .checkIn(["PENDING", "PROCESSED", "FAILED"]);
     table.integer("retries").notNullable().defaultTo(0);
     table.timestamp("created_at").defaultTo(knex.fn.now()).notNullable();
-    table.timestamp("updated_at").defaultTo(knex.fn.now()).notNullable();
+    table.timestamp("next_retry_at").defaultTo(knex.fn.now()).notNullable();
 
     table.index("event_type", "idx_outbox_events_event_type");
     table.index("status", "idx_outbox_events_status");
     table.index("retries", "idx_outbox_events_retries");
-    table.index("updated_at", "idx_outbox_events_updated_at");
+    table.index("next_retry_at", "idx_outbox_events_next_retry_at");
   });
 }
 

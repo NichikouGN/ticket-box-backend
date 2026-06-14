@@ -146,9 +146,6 @@ export const ConcertService = {
       throw new AppError("Concert not found", 404);
     }
 
-    console.log("Concert status:", concert.status);
-    console.log("!Use cache:", organizerId);
-
     if (useCache && String(concert.status) !== "PUBLISHED") {
       throw new AppError("Concert not found", 404);
     }
@@ -227,7 +224,6 @@ export const ConcertService = {
       const cached = await safeRedisHGetAll(key);
 
       if (cached && Object.keys(cached).length > 0) {
-        console.log(cached);
         const result = Object.entries(cached).map(([ticketTypeId, stock]) => ({
           id: ticketTypeId,
           stock: Number(stock),

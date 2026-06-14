@@ -3,8 +3,6 @@ import db from "../db/knex.js";
 import { AppError } from "../types/appError.types.js";
 import type {
   CreateOrderInput,
-  CreatePaymentInput,
-  OrderResponse,
   PaymentDetailResponse,
   PaymentRecord,
   CheckoutSessionResponse,
@@ -15,6 +13,7 @@ import { orderQueue } from "../queues/order.queue.js";
 import { ticketQueue } from "../queues/ticket.queue.js";
 import { stripe } from "../infrastructure/stripe.client.js";
 import dotenv from "dotenv";
+import logger from "../utils/logger.js";
 dotenv.config();
 
 const PAYMENT_WINDOW_MINUTES = 10;
@@ -115,6 +114,23 @@ export const PaymentService = {
     input: CreateOrderInput,
     paymentId: string,
   ): Promise<CheckoutSessionResponse> {
+    logger.info(
+      {
+        name: `Order ${input.orderId}`,
+        currency: "usd",
+        unit_amount: input.amount * 100,
+        success_url: `http://localhost:4000/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `http://localhost:4000/payment-cancelled`,
+        metadata: {
+          paymentId: paymentId,
+          userId: input.userId,
+          idempotencyKey: input.idempotencyKey,
+        },
+      },
+      "Creating Stripe checkout session for order:",
+      input.orderId,
+    );
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -122,7 +138,7 @@ export const PaymentService = {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `Order ${input.orderId} Payment`,
+              name: `Order ${input.orderId}`,
             },
             unit_amount: input.amount * 100,
           },
@@ -159,18 +175,37 @@ export const PaymentService = {
   async createPayment(
     input: CreateOrderInput,
   ): Promise<{ paymentUrl: string; paymentDeadline: string }> {
-    const paymentId = crypto.randomUUID();
-    console.log(
-      "[Step 11]: Starting payment creation process for order:",
-      input.orderId,
-      "with payment ID:",
-      paymentId,
+    logger.info(
+      "===================== [PaymentService - Service - createPayment] =====================",
     );
 
+    const paymentId = crypto.randomUUID();
     try {
-      console.log("[Step 12] Creating checkout session for payment ID:", paymentId);
-      const result = await this.createCheckoutSession(input, paymentId);
-      if (!result || !result.paymentUrl) {
+      logger.info(
+        { paymentId, input },
+        "Initiating payment creation process for order:",
+        input.orderId,
+      );
+
+      const existing = await PaymentRepository.findByIdempotencyKey(input.idempotencyKey);
+
+      if (existing) {
+        logger.info(
+          { paymentId, idempotencyKey: input.idempotencyKey },
+          "Existing payment found for idempotency key:",
+          input.idempotencyKey,
+          "Returning existing payment details for payment ID:",
+          existing.id,
+        );
+        return {
+          paymentUrl: existing.payment_url || "",
+          paymentDeadline: toPaymentDeadline(),
+        };
+      }
+
+      const session = await this.createCheckoutSession(input, paymentId);
+
+      if (!session || !session.paymentUrl) {
         throw new AppError("Failed to create checkout session", 500);
       }
 
@@ -182,33 +217,36 @@ export const PaymentService = {
           amount: input.amount,
           paymentMethod: input.paymentMethod,
           idempotencyKey: input.idempotencyKey,
-          paymentSessionId: result.sessionId,
+          paymentSessionId: session.sessionId,
+          paymentUrl: session.paymentUrl,
           status: "PROCESSING",
         });
       });
 
-      console.log("Created payment record:", payment);
+      logger.info({ payment }, "Created payment record in db");
 
       if (!payment) {
         throw new AppError("Failed to create payment", 500);
       }
-      console.log(
-        "[Step 13] Checkout session created successfully for payment ID:",
+
+      await PaymentRepository.updatePaymentStatus(payment.id, "PENDING_PAYMENT");
+
+      logger.info(
+        { paymentId },
+        "Checkout session created successfully for payment ID:",
         payment.id,
         "Session URL:",
-        result.paymentUrl,
+        session.paymentUrl,
       );
 
-      await PaymentRepository.updateSessionId(payment.id, result.sessionId);
-
       return {
-        paymentUrl: result.paymentUrl,
+        paymentUrl: session.paymentUrl,
         paymentDeadline: toPaymentDeadline(),
       };
     } catch (error) {
-      console.error("Error during payment processing:", error);
+      logger.error({ paymentId, error: error }, "Error during payment processing:");
 
-      await PaymentRepository.updateStatus(paymentId, "FAILED");
+      await PaymentRepository.updatePaymentStatus(paymentId, "FAILED");
       // await emitFailureJobs(payment);
 
       if (error instanceof AppError) {
@@ -253,7 +291,7 @@ export const PaymentService = {
       throw new AppError("Payment not found", 404);
     }
 
-    await PaymentRepository.updateStatus(payment.id, "FAILED", payment.payment_session_id);
+    await PaymentRepository.updatePaymentStatus(payment.id, "FAILED");
     await emitFailureJobs(payment);
 
     return this.getPayment(paymentId);

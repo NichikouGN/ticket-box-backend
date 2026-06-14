@@ -1,6 +1,7 @@
 import type { Knex } from "knex";
 import db from "../db/knex.js";
 import type { OrderListItem, OrderStatus } from "../types/order.types.js";
+import logger from "../utils/logger.js";
 
 export type OrderItemInput = {
   concertId: string;
@@ -35,22 +36,21 @@ export const OrderRepository = {
       status: OrderStatus;
     },
   ) {
-    console.log("[Step 5.1] Inserting order record into database with ID:", input.id);
-    const inserted = await trx("orders")
-      .insert({
-        id: input.id,
-        user_id: input.userId,
-        idempotency_key: input.idempotencyKey,
-        total_amount: input.totalAmount,
-        status: input.status,
-      })
-      .returning("id");
+    await trx("orders").insert({
+      id: input.id,
+      user_id: input.userId,
+      idempotency_key: input.idempotencyKey,
+      total_amount: input.totalAmount,
+      status: input.status,
+    });
 
-    return inserted[0];
+    logger.info(
+      { userId: input.userId, idempotencyKey: input.idempotencyKey, orderId: input.id },
+      "Successfully creating order record in database",
+    );
   },
 
   async createOrderItems(trx: Knex.Transaction, orderId: string, items: OrderItemInput[]) {
-    console.log("[Step 5.2] Inserting order items into database for order:", orderId);
     await trx("order_items").insert(
       items.map((item) => ({
         order_id: orderId,
@@ -61,6 +61,7 @@ export const OrderRepository = {
         line_total: item.unitPrice * item.quantity,
       })),
     );
+    logger.info({ orderId }, "Successfully inserting order items into database");
   },
 
   async createPaymentIntent(
@@ -74,19 +75,25 @@ export const OrderRepository = {
       idempotencyKey: string;
     },
   ) {
-    console.log("[Step 5.3] Creating payment intent record in database with ID:", id);
-    await trx("outbox_events").insert({
-      id: id,
-      event_type: "CREATE_PAYMENT",
-      payload: JSON.stringify(payload),
-      status: "PENDING",
-      retries: 0,
-      created_at: trx.fn.now(),
-      updated_at: trx.fn.now(),
-    });
+    const result = await trx("outbox_events")
+      .insert({
+        id: id,
+        event_type: "CREATE_PAYMENT",
+        payload: JSON.stringify(payload),
+        status: "PENDING",
+        retries: 0,
+        created_at: trx.fn.now(),
+        next_retry_at: trx.raw("NOW() + INTERVAL '45 seconds'"),
+      })
+      .returning("*");
+    logger.info(
+      { paymentIntentId: id, intent: result[0] },
+      "Successfully creating payment intent record in database",
+    );
   },
 
   async updateStatus(orderId: string, status: OrderStatus) {
+    logger.info({ orderId }, "Updating order status in database");
     await db("orders").where("id", orderId).update({ status, updated_at: db.fn.now() });
   },
 

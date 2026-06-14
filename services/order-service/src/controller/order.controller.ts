@@ -3,6 +3,7 @@ import { AppError } from "../types/appError.types.js";
 import { createOrderSchema, listOrdersQuerySchema, uuidSchema } from "../types/order.types.js";
 import { OrderService } from "../services/order.service.js";
 import { Redis } from "ioredis";
+import logger from "../utils/logger.js";
 
 /**
  * Creates a new order.
@@ -26,9 +27,12 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Idempotency-Key is required" });
     }
 
-    console.log(
-      "[Step 1] Request validated successfully. Creating order with data:",
-      parsedBody.data,
+    logger.info(
+      "===================== [OrderService - Controller - createOrder] =====================",
+    );
+    logger.info(
+      { userId: req.user?.userId, body: parsedBody.data, idempotencyKey },
+      "Received request to create order",
     );
 
     const result = await OrderService.createOrder(
@@ -37,7 +41,7 @@ export const createOrder = async (req: Request, res: Response) => {
       idempotencyKey,
     );
 
-    console.log("Order created successfully:", result);
+    logger.info({ userId: req.user?.userId, result }, "Order created successfully");
 
     return res.status(201).json({
       success: true,
@@ -45,7 +49,6 @@ export const createOrder = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (error) {
-    console.error("[Order Controller - createOrder]: Error creating order:", error);
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({ success: false, message: error.message });
     }
@@ -70,12 +73,12 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
   }
   const orderId = params.data;
 
-  console.log(`[SSE] Client connected for order ID: ${orderId}`);
+  logger.info(`[SSE] Client connected for order ID: ${orderId}`);
 
   let currentStatus;
   try {
     currentStatus = await OrderService.getOrderUrl(orderId);
-    console.log(`[SSE] Current status for order ID ${orderId}:`, currentStatus);
+    logger.info(currentStatus, `[SSE] Current status for order ID ${orderId}:`);
   } catch (error) {
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({ success: false, message: error.message });
@@ -89,10 +92,8 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
     Connection: "keep-alive",
   });
 
-  console.log(`[SSE] Checking status for order ID ${orderId}`);
-  console.log(`[SSE] Current status for order ID ${orderId}:`, currentStatus.status);
   if (["PENDING_PAYMENT", "COMPLETED", "FAILED", "EXPIRED"].includes(currentStatus.status)) {
-    console.log(
+    logger.info(
       `[SSE] Order ID ${orderId} is in final state. Sending current status and closing connection.`,
     );
     res.write(`event: ORDER_UPDATED\n`);

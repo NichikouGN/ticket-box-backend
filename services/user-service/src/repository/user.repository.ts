@@ -3,9 +3,9 @@ import { AppError } from "../types/appError.types.js";
 import type { role, status } from "../types/auth.types.js";
 
 export const UserRepository = {
-  async findById(id: number) {
-    let query = db("users").where("id", id).first();
-    return await query;
+  async getUserById(id: string) {
+    let query = await db("users").where("id", id).first();
+    return query;
   },
 
   async findByEmail(email: string) {
@@ -18,13 +18,14 @@ export const UserRepository = {
     return await query;
   },
 
-  async getUserProfile(userId: number) {
-    const user = await this.findById(userId);
+  async getUserProfile(userId: string) {
+    const user = await this.getUserById(userId);
     return {
       id: user.id,
       email: user.email,
       full_name: user.full_name,
       role: user.role,
+      status: user.status,
     };
   },
 
