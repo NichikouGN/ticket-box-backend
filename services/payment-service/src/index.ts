@@ -26,7 +26,7 @@ const healthHandler = (req: express.Request, res: express.Response) => {
 app.get("/health", healthHandler);
 app.get("/api/v1/health", healthHandler);
 
-app.use("/api/v1/payments", paymentRoutes);
+app.use("/internal", paymentRoutes);
 
 app.use((req, res) => {
   console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);

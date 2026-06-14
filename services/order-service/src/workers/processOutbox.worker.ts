@@ -1,10 +1,16 @@
 import db from "../db/knex.js";
-import { PaymentClient } from "../clients/payment.client.js";
+import { paymentClient } from "../clients/payment.client.js";
 import logger from "../utils/logger.js";
 import { redis } from "../infrastructure/redis.client.js";
 import { OutboxRepository } from "../repository/outbox.repository.js";
+import type {
+  OutboxEventType,
+  PaymentCreationData,
+  PaymentCreationResult,
+} from "../types/internal.types.js";
 
 export const processOutboxWorker = async () => {
+  logger.info("===================== [processOutboxWorker] =====================");
   const events = await db("outbox_events")
     .where({ status: "PENDING" })
     .where("retries", "<", 5)
@@ -19,11 +25,24 @@ export const processOutboxWorker = async () => {
   }
 };
 
-const handleEvent = async (event: any) => {
+const handleEvent = async (event: OutboxEventType) => {
   try {
     if (event.event_type === "CREATE_PAYMENT") {
       logger.info({ eventId: event.id, eventType: event.event_type }, "Processing outbox event");
-      const result = await PaymentClient.createPayment(event.payload);
+
+      const response = await paymentClient.post("/payments", event.payload, {
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": event.payload.idempotencyKey,
+        },
+      });
+
+      const result: PaymentCreationData = (response.data as PaymentCreationResult).data;
+
+      logger.info(
+        { eventId: event.id, orderId: event.payload.orderId, paymentResult: result },
+        "Payment creation response received from payment service for outbox event",
+      );
 
       logger.info(
         { eventId: event.id, orderId: event.payload.orderId, paymentResult: result },
