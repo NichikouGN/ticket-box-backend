@@ -1,35 +1,34 @@
 import type { Request, Response } from "express";
 import { AppError } from "../types/appError.types.js";
 import { OutboxService } from "../services/outbox.service.js";
-import { OutboxEventStatusUpdateSchema, uuidSchema } from "../types/internal.types.js";
+import { OutboxEventSchema, uuidSchema } from "../types/internal.types.js";
 import logger from "../utils/logger.js";
+import { OrderService } from "../services/order.service.js";
 
-export const updateOutboxEventStatus = async (req: Request, res: Response) => {
+export const handlePaymentFailed = async (req: Request, res: Response) => {
   try {
     logger.info(
-      "===================== [OrderService - Controller - updateOutboxEventStatus] =====================",
+      "===================== [OrderService - Controller - handlePaymentFailed] =====================",
     );
 
-    const parsedParams = uuidSchema.safeParse(req.params.eventId);
+    const parsedParams = uuidSchema.safeParse(req.params.orderId);
     if (!parsedParams.success) {
-      throw new AppError("Invalid eventId parameter", 400);
+      throw new AppError("Invalid orderId parameter", 400);
     }
 
-    const parsedBody = OutboxEventStatusUpdateSchema.safeParse(req.body);
+    const parsedBody = OutboxEventSchema.safeParse(req.body);
     if (!parsedBody.success) {
       throw new AppError("Invalid request body", 400);
     }
 
-    const eventId = parsedParams.data;
-    const status = parsedBody.data.status;
+    const orderId = parsedParams.data;
+    const eventId = parsedBody.data.eventId;
 
-    const result = await OutboxService.updateEventStatus(eventId, status);
+    await OrderService.markOrderAsFailed(orderId);
+    await OutboxService.updateEventStatus(eventId, "COMPLETED");
 
-    if (result) {
-      return res.status(200).json({ success: true, message: "Outbox event status updated" });
-    } else {
-      return res.status(404).json({ success: false, message: "Outbox event not found" });
-    }
+    // await OrderService.rollbackStocks();
+    await OrderService.publishOrderUpdate(orderId, "PAYMENT_FAILED");
   } catch (error) {
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({ success: false, message: error.message });

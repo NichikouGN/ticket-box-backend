@@ -1,8 +1,14 @@
 services:
   redis:
     image: redis:7-alpine
+    container_name: redis-ticket-box
     ports:
       - "6379:6379"
+    command: >
+      redis-server --appendonly yes --appendfsync everysec --maxmemory 2gb --maxmemory-policy noeviction --timeout 0
+    volumes:
+      - redis-data:/data
+    restart: always
 
   redisinsight:
     image: redis/redisinsight:latest
@@ -11,3 +17,6 @@ services:
       - "5540:5540"
     depends_on:
       - redis
+
+volumes:
+  redis-data:

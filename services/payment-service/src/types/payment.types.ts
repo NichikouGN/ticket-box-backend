@@ -10,7 +10,7 @@ export const createOrderSchema = z.object({
   userId: z.string().uuid(),
   amount: z.coerce.number().int().positive(),
   paymentMethod: paymentMethodSchema,
-  idempotencyKey: z.string().min(1),
+  // idempotencyKey: z.string().min(1),
 });
 
 export const createPaymentSchema = z.object({
@@ -18,7 +18,7 @@ export const createPaymentSchema = z.object({
   userId: z.string().uuid(),
   amount: z.coerce.number().int().positive(),
   paymentMethod: paymentMethodSchema,
-  idempotencyKey: z.string().min(1),
+  // idempotencyKey: z.string().min(1),
 });
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 
@@ -40,13 +40,13 @@ export type PaymentRecord = {
   user_id: string;
   amount: number;
   payment_method: string;
-  idempotency_key: string;
   status: PaymentStatus;
   payment_session_id: string | null;
   payment_intent_id: string | null;
   payment_url: string | null;
   created_at: string;
   updated_at: string;
+  payment_deadline: string;
 };
 
 export type CreatePaymentResponse = {
@@ -73,4 +73,14 @@ export type OrderResponse = {
   totalPrice: number;
   paymentDeadline: string;
   paymentUrl: string;
+};
+
+export type OutboxEventType = {
+  id: string;
+  event_type: string;
+  payload: Object;
+  status: "PENDING" | "PROCESSED" | "FAILED";
+  retries: number;
+  next_retry_at: Date;
+  created_at: Date;
 };

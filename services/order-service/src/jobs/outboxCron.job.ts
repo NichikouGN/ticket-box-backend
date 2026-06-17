@@ -1,0 +1,97 @@
+import cron from "node-cron";
+import db from "../db/knex.js";
+import type { OutboxEventType } from "../types/internal.types.js";
+import { paymentQueue } from "../queues/payment.queue.js";
+import logger from "../utils/logger.js";
+
+export const startOutboxCronJob = () => {
+  let running = false;
+
+  cron.schedule("*/30 * * * * *", async () => {
+    if (running) {
+      return;
+    }
+
+    running = true;
+    try {
+      logger.info("[ORDER OUTBOX] Fetching pending events from orders_outbox table");
+      const pendingEvennts = await db("orders_outbox")
+        .where("status", "PENDING")
+        .where("next_retry_at", "<=", db.fn.now())
+        .orderBy("next_retry_at", "asc")
+        .limit(10)
+        .forUpdate()
+        .skipLocked();
+
+      for (const event of pendingEvennts) {
+        await handlePendingEvents(event);
+      }
+    } catch (err) {
+      logger.error({ err }, "[ORDER OUTBOX] Failed to relay message to BullMQ");
+    } finally {
+      running = false;
+    }
+  });
+
+  const handlePendingEvents = async (event: OutboxEventType) => {
+    try {
+      switch (event.event_type) {
+        case "CREATE_PAYMENT":
+          const job = await paymentQueue.add("CREATE_PAYMENT", event.payload, {
+            attempts: 3,
+            backoff: { type: "exponential", delay: 3_000 },
+          });
+
+          logger.info({ job: job }, "[ORDER OUTBOX] Added CREATE_PAYMENT job to BullMQ with job");
+
+          await db("orders_outbox").where({ id: event.id }).update({ status: "PROCESSED" });
+
+          logger.info(
+            { outboxEventId: event.id, outbotRow: event.payload },
+            "[ORDER OUTBOX] Relayed CREATE_PAYMENT outbox event to BullMQ",
+          );
+
+          break;
+        case "CLEANUP_EXPIRED_PAYMENT":
+          await paymentQueue.add("CLEANUP_EXPIRED_PAYMENT", event.payload, {
+            attempts: 3,
+            backoff: { type: "exponential", delay: 3_000 },
+          });
+
+          await db("orders_outbox").where({ id: event.id }).update({ status: "PROCESSED" });
+
+          logger.info(
+            { outboxEventId: event.id, outbotRow: event.payload },
+            "[ORDER OUTBOX] Relayed CLEANUP_EXPIRED_PAYMENT outbox event to BullMQ",
+          );
+          break;
+        default:
+          logger.warn(
+            { eventType: event.event_type },
+            "[ORDER OUTBOX] Received unknown outbox event type, skipping",
+          );
+      }
+
+      logger.info(
+        { outboxEventId: event.id, eventType: event.event_type },
+        "[ORDER OUTBOX] Successfully processed outbox event, fetching queue counts",
+      );
+      const data = await paymentQueue.getJobCounts();
+      logger.info({ jobCounts: data }, "[ORDER OUTBOX] Successfully processed outbox event");
+    } catch (err) {
+      logger.error({ err }, "[ORDER OUTBOX] Failed to relay message to BullMQ");
+
+      const delay = 30_000;
+      const jitter = Math.floor(Math.random() * 5_000); // Random jitter between 0 and 10 seconds
+      const nextRetryAt = new Date(Date.now() + delay + jitter);
+
+      await db("orders_outbox")
+        .where({ id: event.id })
+        .update({ next_retry_at: nextRetryAt })
+        .forUpdate()
+        .skipLocked();
+    }
+  };
+};
+
+startOutboxCronJob();

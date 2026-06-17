@@ -1,6 +1,7 @@
 import type { Knex } from "knex";
 
 export async function seed(knex: Knex): Promise<void> {
+  await knex("order_items").del();
   await knex("users").del();
 
   await knex("users").insert([
@@ -26,6 +27,14 @@ export async function seed(knex: Knex): Promise<void> {
       password_hash: "hashed_pw_3",
       full_name: "Le Staff",
       role: "STAFF",
+      status: "ACTIVE",
+    },
+    {
+      id: "4af9187e-15dd-4160-aff4-874aec923194",
+      email: "nichi@example.com",
+      password_hash: "$2b$10$Q2ZqVs11dOek3yY8YCJ4x.S9FoktdmIExUJXyhFmSXMApHzFGfa5G",
+      full_name: "Nichi",
+      role: "AUDIENCE",
       status: "ACTIVE",
     },
   ]);

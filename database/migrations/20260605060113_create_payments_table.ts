@@ -14,8 +14,6 @@ export async function up(knex: Knex): Promise<void> {
 
     table.text("payment_method").notNullable();
 
-    table.text("idempotency_key").notNullable().unique();
-
     table
       .text("status")
       .notNullable()
@@ -31,6 +29,8 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp("created_at", { useTz: true }).defaultTo(knex.fn.now());
 
     table.timestamp("updated_at", { useTz: true }).defaultTo(knex.fn.now());
+
+    table.timestamp("payment_deadline", { useTz: true }).notNullable();
 
     table.index("order_id", "idx_payments_order_id");
     table.index("user_id", "idx_payments_user_id");

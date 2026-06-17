@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { stripe } from "../infrastructure/stripe.client.js";
+import { stripe } from "../clients/stripe.client.js";
 import type { Response, Request } from "express";
 import dotenv from "dotenv";
 import { StripeService } from "../services/stripe.service.js";

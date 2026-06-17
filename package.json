@@ -7,17 +7,24 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:stripe\" \"npm run dev:api-gateway\" \"npm run dev:user-service\" \"npm run dev:concert-service\" \"npm run dev:order-service\" \"npm run dev:payment-service\"",
-    "dev:stripe": "stripe listen --forward-to http://localhost:3004",
+    "relay": "concurrently \"npm run dev:order-outbox-relay\" \"npm run dev:payment-outbox-relay\"",
+    "cron": "concurrently \"npm run dev:order-outbox-cron\" \"npm run dev:payment-outbox-cron\"",
+    "dev:stripe": "stripe listen --forward-to http://localhost:3005/webhooks/stripe",
     "dev:api-gateway": "cd services/api-gateway && tsx watch src/index.ts",
     "dev:user-service": "cd services/user-service && tsx watch src/index.ts",
     "dev:concert-service": "cd services/concert-service && tsx watch src/index.ts",
     "dev:payment-service": "cd services/payment-service && tsx watch src/index.ts",
-    "dev:order-service": "cd services/order-service && tsx watch src/index.ts"
+    "dev:order-service": "cd services/order-service && tsx watch src/index.ts",
+    "dev:order-outbox-relay": "cd services/order-service && tsx src/daemons/outbox.relay.ts",
+    "dev:payment-outbox-relay": "cd services/payment-service && tsx src/daemons/outbox.relay.ts",
+    "dev:order-outbox-cron": "cd services/order-service && tsx src/jobs/outboxCron.job.ts",
+    "dev:payment-outbox-cron": "cd services/payment-service && tsx src/jobs/outboxCron.job.ts"
   },
   "dependencies": {
     "axios": "^1.17.0",
     "dotenv": "^17.4.2",
     "knex": "^3.2.10",
+    "node-cron": "^4.2.1",
     "pg": "^8.21.0",
     "pino": "^10.3.1",
     "stripe": "^22.2.0"

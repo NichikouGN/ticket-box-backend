@@ -1,171 +1,18 @@
 import crypto from "crypto";
 import db from "../db/knex.js";
 import { AppError } from "../types/appError.types.js";
-import type {
-  CreateOrderInput,
-  PaymentDetailResponse,
-  PaymentRecord,
-  CheckoutSessionResponse,
-} from "../types/payment.types.js";
+import type { CreateOrderInput } from "../types/payment.types.js";
 import { PaymentRepository } from "../repository/payment.repository.js";
-import { notificationQueue } from "../queues/notification.queue.js";
-import { orderQueue } from "../queues/order.queue.js";
-import { ticketQueue } from "../queues/ticket.queue.js";
-import { stripe } from "../infrastructure/stripe.client.js";
-import dotenv from "dotenv";
 import logger from "../utils/logger.js";
+import dotenv from "dotenv";
 dotenv.config();
+import { StripeService } from "./stripe.service.js";
 
-const PAYMENT_WINDOW_MINUTES = 10;
+const PAYMENT_WINDOW_MINUTES = parseInt(process.env.PAYMENT_WINDOW_MINUTES || "15", 10);
 
 const toPaymentDeadline = () =>
   new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000).toISOString();
-
-/**
- * Emits success jobs for a completed payment.
- * @param payment The payment record.
- * @param paymentRef The payment reference.
- * @return A promise that resolves when all jobs have been emitted.
- */
-const emitSuccessJobs = async (payment: PaymentRecord, paymentRef: string) => {
-  await orderQueue.add(
-    "UPDATE_ORDER_COMPLETED",
-    {
-      order_id: payment.order_id,
-      payment_id: payment.id,
-      user_id: payment.user_id,
-      amount: payment.amount,
-      payment_ref: paymentRef,
-    },
-    {
-      jobId: `order-completed-${payment.order_id}`,
-    },
-  );
-
-  await ticketQueue.add(
-    "GENERATE_TICKETS",
-    {
-      order_id: payment.order_id,
-      payment_id: payment.id,
-      user_id: payment.user_id,
-      amount: payment.amount,
-      payment_ref: paymentRef,
-    },
-    {
-      jobId: `tickets-${payment.order_id}`,
-    },
-  );
-
-  await notificationQueue.add(
-    "SEND_ORDER_CONFIRMED",
-    {
-      order_id: payment.order_id,
-      payment_id: payment.id,
-      user_id: payment.user_id,
-      amount: payment.amount,
-      payment_ref: paymentRef,
-    },
-    {
-      jobId: `order-confirmed-${payment.order_id}`,
-    },
-  );
-};
-
-/**
- * Marks a payment as failed for a given payment ID. If the payment is not found, it throws an AppError with a 404 status code. Otherwise, it updates the payment status to "failed", emits failure jobs for order and notification processing, and returns the updated payment details.
- * @param payment The payment record
- * @return A promise that resolves when all failure jobs have been emitted
- */
-const emitFailureJobs = async (payment: PaymentRecord) => {
-  await orderQueue.add(
-    "UPDATE_ORDER_FAILED",
-    {
-      order_id: payment.order_id,
-      payment_id: payment.id,
-      user_id: payment.user_id,
-      amount: payment.amount,
-    },
-    {
-      jobId: `order-failed-${payment.order_id}`,
-    },
-  );
-
-  await notificationQueue.add(
-    "SEND_ORDER_FAILED",
-    {
-      order_id: payment.order_id,
-      payment_id: payment.id,
-      user_id: payment.user_id,
-      amount: payment.amount,
-    },
-    {
-      jobId: `order-failed-notification-${payment.order_id}`,
-    },
-  );
-};
-
 export const PaymentService = {
-  /**
-   * Creates a Stripe checkout session for the given payment input.
-   * @param input - The input data required to create a payment, including order ID, user ID, amount, payment method, and idempotency key.
-   * @returns stripe checkout session URL and payment deadline
-   */
-  async createCheckoutSession(
-    input: CreateOrderInput,
-    paymentId: string,
-  ): Promise<CheckoutSessionResponse> {
-    logger.info(
-      {
-        name: `Order ${input.orderId}`,
-        currency: "usd",
-        unit_amount: input.amount * 100,
-        success_url: `http://localhost:4000/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `http://localhost:4000/payment-cancelled`,
-        metadata: {
-          paymentId: paymentId,
-          userId: input.userId,
-          idempotencyKey: input.idempotencyKey,
-        },
-      },
-      "Creating Stripe checkout session for order:",
-      input.orderId,
-    );
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `Order ${input.orderId}`,
-            },
-            unit_amount: input.amount * 100,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `http://localhost:4000/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:4000/payment-cancelled`,
-      metadata: {
-        paymentId: paymentId,
-        userId: input.userId,
-        idempotencyKey: input.idempotencyKey,
-      },
-    });
-
-    const payload = {
-      sessionId: session.id,
-      paymentId: paymentId,
-      totalPrice: input.amount,
-      paymentDeadline: toPaymentDeadline(),
-      paymentUrl: session.url || "",
-    };
-
-    return payload;
-  },
-
   /**
    * Creates a payment record and initiates the payment process for the given input. If a payment with the same idempotency key already exists, it returns the existing payment information. Otherwise, it creates a new payment record, generates a checkout session, and returns the payment details including the checkout URL and payment deadline.
    * @param input  - The input data required to create a payment, including order ID, user ID, amount, payment method, and idempotency key.
@@ -175,125 +22,82 @@ export const PaymentService = {
   async createPayment(
     input: CreateOrderInput,
   ): Promise<{ paymentUrl: string; paymentDeadline: string }> {
-    logger.info(
-      "===================== [PaymentService - Service - createPayment] =====================",
-    );
-
     const paymentId = crypto.randomUUID();
     try {
-      logger.info(
-        { paymentId, input },
-        "Initiating payment creation process for order:",
-        input.orderId,
-      );
-
-      const existing = await PaymentRepository.findByIdempotencyKey(input.idempotencyKey);
+      const existing = await PaymentRepository.findByOrderId(input.orderId);
 
       if (existing) {
         logger.info(
-          { paymentId, idempotencyKey: input.idempotencyKey },
-          "Existing payment found for idempotency key:",
-          input.idempotencyKey,
-          "Returning existing payment details for payment ID:",
-          existing.id,
+          { paymentId: existing.id, orderId: existing.order_id },
+          "[Service - createPayment] Payment already exists for order, returning existing payment info:",
+          existing.order_id,
         );
         return {
           paymentUrl: existing.payment_url || "",
-          paymentDeadline: toPaymentDeadline(),
+          paymentDeadline: existing.payment_deadline || "",
         };
       }
 
-      const session = await this.createCheckoutSession(input, paymentId);
+      const deadline = toPaymentDeadline();
+      const session = await StripeService.createCheckoutSession(input, paymentId, deadline);
 
       if (!session || !session.paymentUrl) {
         throw new AppError("Failed to create checkout session", 500);
       }
 
-      const payment = await db.transaction(async (trx) => {
-        return await PaymentRepository.createPayment(trx, {
-          id: paymentId,
-          orderId: input.orderId,
-          userId: input.userId,
-          amount: input.amount,
-          paymentMethod: input.paymentMethod,
-          idempotencyKey: input.idempotencyKey,
-          paymentSessionId: session.sessionId,
-          paymentUrl: session.paymentUrl,
-          status: "PROCESSING",
-        });
+      const payment = await PaymentRepository.createPayment(db, {
+        id: paymentId,
+        orderId: input.orderId,
+        userId: input.userId,
+        amount: input.amount,
+        paymentMethod: input.paymentMethod,
+        paymentSessionId: session.sessionId,
+        paymentUrl: session.paymentUrl,
+        paymentDeadline: deadline,
+        status: "PENDING_PAYMENT",
       });
-
-      logger.info({ payment }, "Created payment record in db");
 
       if (!payment) {
         throw new AppError("Failed to create payment", 500);
       }
 
-      await PaymentRepository.updatePaymentStatus(payment.id, "PENDING_PAYMENT");
-
       logger.info(
-        { paymentId },
-        "Checkout session created successfully for payment ID:",
-        payment.id,
-        "Session URL:",
-        session.paymentUrl,
+        { paymentId: payment.id, orderId: payment.order_id },
+        "[Service - createPayment] Payment record created successfully for order:",
+        payment.order_id,
       );
 
       return {
         paymentUrl: session.paymentUrl,
-        paymentDeadline: toPaymentDeadline(),
+        paymentDeadline: deadline,
       };
     } catch (error) {
-      logger.error({ paymentId, error: error }, "Error during payment processing:");
-
-      await PaymentRepository.updatePaymentStatus(paymentId, "FAILED");
-      // await emitFailureJobs(payment);
+      logger.error(
+        { paymentId, error: error },
+        "[Service - createPayment] Error during payment processing:",
+      );
 
       if (error instanceof AppError) {
         throw error;
       }
-
       throw new AppError("Payment processing failed", 502);
     }
   },
 
   /**
-   * Gets the payment details for a given payment ID. If the payment is not found, it throws an AppError with a 404 status code. Otherwise, it returns the payment details including payment ID, order ID, status, amount, payment reference, and processed timestamp.
-   * @param paymentId - The ID of the payment to retrieve details for.
-   * @returns A promise resolving to the payment details.
-   * @throws AppError if the payment is not found or if there is an error during retrieval.
-   */
-  async getPayment(paymentId: string): Promise<PaymentDetailResponse> {
-    const payment = await PaymentRepository.findById(paymentId);
-    if (!payment) {
-      throw new AppError("Payment not found", 404);
-    }
-
-    return {
-      paymentId: payment.id,
-      orderId: payment.order_id,
-      status: payment.status,
-      amount: payment.amount,
-      paymentSessionId: payment.payment_session_id,
-      processedAt: payment.updated_at,
-    };
-  },
-
-  /**
-   * Marks a payment as failed for a given payment ID. If the payment is not found, it throws an AppError with a 404 status code. Otherwise, it updates the payment status to "failed", emits failure jobs for order and notification processing, and returns the updated payment details.
-   * @param paymentId payment ID to mark as failed
+   * Marks a payment as failed for a given order ID. If the payment is not found, it throws an AppError with a 404 status code. Otherwise, it updates the payment status to "failed", emits failure jobs for order and notification processing, and returns the updated payment details.
+   * @param orderId order ID to mark as failed
    * @returns A promise resolving to the updated payment details after marking as failed
    * @throws AppError if the payment is not found or if there is an error during the update process
    */
-  async markFailed(paymentId: string) {
-    const payment = await PaymentRepository.findById(paymentId);
+  async markFailed(orderId: string) {
+    const payment = await PaymentRepository.findByOrderId(orderId);
     if (!payment) {
-      throw new AppError("Payment not found", 404);
+      logger.warn({ orderId }, "[Service - markFailed] Payment not found for order:", orderId);
+      return null;
     }
 
-    await PaymentRepository.updatePaymentStatus(payment.id, "FAILED");
-    await emitFailureJobs(payment);
-
-    return this.getPayment(paymentId);
+    await PaymentRepository.updatePaymentStatus(db, payment.id, "FAILED");
+    return await PaymentRepository.findById(payment.id);
   },
 };

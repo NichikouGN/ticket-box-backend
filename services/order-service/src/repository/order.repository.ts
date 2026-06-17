@@ -2,6 +2,7 @@ import type { Knex } from "knex";
 import db from "../db/knex.js";
 import type { OrderListItem, OrderStatus } from "../types/order.types.js";
 import logger from "../utils/logger.js";
+type DB = Knex | Knex.Transaction;
 
 export type OrderItemInput = {
   concertId: string;
@@ -11,6 +12,32 @@ export type OrderItemInput = {
 };
 
 export const OrderRepository = {
+  async getOrderItems(orderId: string): Promise<
+    {
+      userId: string;
+      concertId: string;
+      ticketTypeId: string;
+      quantity: number;
+    }[]
+  > {
+    const result = await db("orders")
+      .join("order_items", "order_items.order_id", "orders.id")
+      .select(
+        "order_items.user_id",
+        "order_items.concert_id",
+        "order_items.ticket_type_id",
+        "order_items.quantity",
+      )
+      .where("orders.id", orderId);
+
+    return result.map((row) => ({
+      userId: row.user_id,
+      concertId: row.concert_id,
+      ticketTypeId: row.ticket_type_id,
+      quantity: row.quantity,
+    }));
+  },
+
   async findById(orderId: string) {
     return db("orders").where("id", orderId).first();
   },
@@ -43,11 +70,6 @@ export const OrderRepository = {
       total_amount: input.totalAmount,
       status: input.status,
     });
-
-    logger.info(
-      { userId: input.userId, idempotencyKey: input.idempotencyKey, orderId: input.id },
-      "Successfully creating order record in database",
-    );
   },
 
   async createOrderItems(trx: Knex.Transaction, orderId: string, items: OrderItemInput[]) {
@@ -61,39 +83,9 @@ export const OrderRepository = {
         line_total: item.unitPrice * item.quantity,
       })),
     );
-    logger.info({ orderId }, "Successfully inserting order items into database");
   },
 
-  async createPaymentIntent(
-    trx: Knex.Transaction,
-    id: string,
-    payload: {
-      orderId: string;
-      userId: string;
-      amount: number;
-      paymentMethod: string;
-      idempotencyKey: string;
-    },
-  ) {
-    const result = await trx("outbox_events")
-      .insert({
-        id: id,
-        event_type: "CREATE_PAYMENT",
-        payload: JSON.stringify(payload),
-        status: "PENDING",
-        retries: 0,
-        created_at: trx.fn.now(),
-        next_retry_at: trx.raw("NOW() + INTERVAL '45 seconds'"),
-      })
-      .returning("*");
-    logger.info(
-      { paymentIntentId: id, intent: result[0] },
-      "Successfully creating payment intent record in database",
-    );
-  },
-
-  async updateStatus(orderId: string, status: OrderStatus) {
-    logger.info({ orderId }, "Updating order status in database");
+  async updateOrderStatus(db: DB, orderId: string, status: OrderStatus) {
     await db("orders").where("id", orderId).update({ status, updated_at: db.fn.now() });
   },
 

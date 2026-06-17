@@ -1,7 +1,7 @@
 POST http://localhost:3000/api/v1/orders
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIzMDk0MzA1Zi1kZWVmLTRkMjgtYmFhMy0xMTdlYWE2Y2U1Y2YiLCJyb2xlIjoiQVVESUVOQ0UiLCJpYXQiOjE3ODE0MTIyMDUsImV4cCI6MTc4MTQ5ODYwNX0.n4SpQmHFd5c0KxGzFNMpHfK6U9HljEQ3HnLzqTN7M18
-Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0YWY5MTg3ZS0xNWRkLTQxNjAtYWZmNC04NzRhZWM5MjMxOTQiLCJyb2xlIjoiQVVESUVOQ0UiLCJpYXQiOjE3ODE2MjQzMjEsImV4cCI6MTc4MTcxMDcyMX0.BbAiYrrVT5KDKCyWEQsJxiIc304nsR3klv1SraYYuF8
+Idempotency-Key: f81d4fae-7dec-11d0-a765-00a0c91e6b01
     
 {
     "paymentMethod": "stripe",

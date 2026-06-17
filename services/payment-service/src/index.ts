@@ -2,7 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import paymentRoutes from "./routes/payment.routes.js";
 import stripeRoutes from "./routes/stripe.routes.js";
-import { createPaymentWorker } from "./workers/createPayment.worker.js";
+import { createPaymentWorker } from "./workers/payment.worker.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 3005);
