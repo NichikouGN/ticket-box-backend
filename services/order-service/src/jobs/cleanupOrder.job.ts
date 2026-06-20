@@ -9,12 +9,18 @@ export const cleanupOrderJob = async (job: any) => {
   };
 
   try {
-    const orderRecord = await OrderRepository.findById(orderId);
+    const orderRecord = await OrderRepository.findById(db, orderId);
     if (!orderRecord) {
       throw new Error(`Order with ID ${orderId} not found`);
     }
 
     if (orderRecord.status === "PROCESSING") {
+      logger.info(
+        { jobId: job.data.id, eventType: job.name, orderId: orderId },
+        "Order is processing when cleanup job was triggered, cleaning up expired order:",
+        orderId,
+      );
+
       await db.transaction(async (trx) => {
         await OrderRepository.updateOrderStatus(trx, orderRecord.id, "EXPIRED");
         await OutboxRepository.createOrderOutboxEvent(trx, "CLEANUP_EXPIRED_PAYMENT", {

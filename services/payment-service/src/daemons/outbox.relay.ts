@@ -2,8 +2,8 @@ import pg from "pg";
 import db from "../db/knex.js";
 import dotenv from "dotenv";
 import { orderQueue } from "../queues/order.queue.js";
-import logger from "../utils/logger.js";
 import { paymentQueue } from "../queues/payment.queue.js";
+import logger from "../utils/logger.js";
 
 dotenv.config();
 
@@ -30,6 +30,10 @@ async function startOutboxRelay() {
     if (!msg.payload) return;
 
     const outboxRow = JSON.parse(msg.payload);
+    logger.info(
+      { eventId: outboxRow.id, eventType: outboxRow.event_type },
+      "[PAYMENT OUTBOX] Processing outbox event",
+    );
     try {
       switch (outboxRow.event_type) {
         case "PAYMENT_CREATED":
@@ -53,7 +57,7 @@ async function startOutboxRelay() {
         case "PAYMENT_EXPIRED":
           await orderQueue.add("PAYMENT_EXPIRED", outboxRow.payload, {
             attempts: 3,
-            backoff: { type: "exponential", delay: 3_000 },
+            backoff: { type: "exponential", delay: 10_000 },
           });
           break;
         case "LATE_WEBHOOK_RECEIVED":

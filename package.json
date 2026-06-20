@@ -6,7 +6,7 @@
     "services/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:stripe\" \"npm run dev:api-gateway\" \"npm run dev:user-service\" \"npm run dev:concert-service\" \"npm run dev:order-service\" \"npm run dev:payment-service\"",
+    "dev": "concurrently \"npm run dev:stripe\" \"npm run dev:api-gateway\" \"npm run dev:user-service\" \"npm run dev:concert-service\" \"npm run dev:order-service\" \"npm run dev:payment-service\" \"npm run dev:ticket-service\"",
     "relay": "concurrently \"npm run dev:order-outbox-relay\" \"npm run dev:payment-outbox-relay\"",
     "cron": "concurrently \"npm run dev:order-outbox-cron\" \"npm run dev:payment-outbox-cron\"",
     "dev:stripe": "stripe listen --forward-to http://localhost:3005/webhooks/stripe",
@@ -15,6 +15,7 @@
     "dev:concert-service": "cd services/concert-service && tsx watch src/index.ts",
     "dev:payment-service": "cd services/payment-service && tsx watch src/index.ts",
     "dev:order-service": "cd services/order-service && tsx watch src/index.ts",
+    "dev:ticket-service": "cd services/ticket-service && tsx watch src/index.ts",
     "dev:order-outbox-relay": "cd services/order-service && tsx src/daemons/outbox.relay.ts",
     "dev:payment-outbox-relay": "cd services/payment-service && tsx src/daemons/outbox.relay.ts",
     "dev:order-outbox-cron": "cd services/order-service && tsx src/jobs/outboxCron.job.ts",

@@ -24,6 +24,8 @@ export const startOutboxCronJob = () => {
         .forUpdate()
         .skipLocked();
 
+      logger.info({ count: pendingEvennts.length }, "[PAYMENT OUTBOX] Fetched pending events");
+
       for (const event of pendingEvennts) {
         await handlePendingEvents(event);
       }
@@ -35,6 +37,10 @@ export const startOutboxCronJob = () => {
   });
 
   const handlePendingEvents = async (event: OutboxEventType) => {
+    logger.info(
+      { eventId: event.id, eventType: event.event_type },
+      "[PAYMENT OUTBOX] Processing outbox event",
+    );
     try {
       switch (event.event_type) {
         case "PAYMENT_CREATED":
@@ -58,7 +64,7 @@ export const startOutboxCronJob = () => {
         case "PAYMENT_EXPIRED":
           await orderQueue.add("PAYMENT_EXPIRED", event.payload, {
             attempts: 3,
-            backoff: { type: "exponential", delay: 3_000 },
+            backoff: { type: "exponential", delay: 7_000 },
           });
           break;
         case "LATE_WEBHOOK_RECEIVED":

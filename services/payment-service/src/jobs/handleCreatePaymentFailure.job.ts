@@ -11,7 +11,7 @@ export const handleCreatePaymentFailureJob = async (job: any) => {
 
   try {
     await PaymentRepository.updatePaymentStatus(db, orderId, "FAILED");
-    await OutboxRepository.createPaymentOutboxEvent(db, "CREATE_PAYMENT_FAILURE", 3000, {
+    await OutboxRepository.createPaymentOutboxEvent(db, "CREATE_PAYMENT_FAILURE", 30, {
       orderId: orderId,
     });
   } catch (err) {

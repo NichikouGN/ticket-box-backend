@@ -44,5 +44,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "../order-service/src/queues/ticket.queue.ts"]
+  "include": ["src/**/*"]
 }

@@ -32,7 +32,30 @@ npm run dev
 
 ## 4. Version
 
-### 0.3.0 (2026-06-18)
+### v0.4.0 (2026-06-20)
+
+- Added Ticket Service to handle ticket management and check-in.
+  1. Added ticket worker and job to handle ticket creation asynchronously.
+  2. Added check-in route, controller to handle check-in and verify ticket validity.
+- Changed Ticket table to not include sha256 and aes256 columns, instead store ticket information.
+
+  ```sql
+  CREATE TABLE tickets (
+      id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id             UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      concert_id          UUID NOT NULL REFERENCES concerts(id) ON DELETE CASCADE,
+      order_id            UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      ticket_type_id      UUID NOT NULL REFERENCES ticket_types(id) ON DELETE CASCADE,
+      status              VARCHAR(255) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('UNUSED', 'USED')),
+      used_at             TIMESTAMPTZ,
+      used_by_staff       UUID REFERENCES users(id) ON DELETE SET NULL,
+      created_at          TIMESTAMPTZ DEFAULT now(),
+  );
+  ```
+
+- Updated Order Service to emit a CREATE_TICKET event to Ticket Service upon order creation and payment success.
+
+### v0.3.0 (2026-06-18)
 
 - Added BullMQ to handle order processing and payment processing asynchronously.
   1. Added order and payment queue to handle order creation and payment processing.
@@ -96,4 +119,4 @@ npm run dev
   2. Sign in, Sign up functionality
   3. Update user role, status for organizer
   4. View a list of active user for organizer
-- Other setup
+- Other setups

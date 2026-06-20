@@ -213,6 +213,10 @@ export const StripeService = {
       return;
     }
 
+    logger.info(
+      { sessionId: session.id, metadata: metaData, paymentId },
+      `[Stripe] Handling checkout.session.expired event for paymentId: ${paymentId}`,
+    );
     await db.transaction(async (trx) => {
       await PaymentRepository.updatePaymentStatus(trx, paymentId, "EXPIRED");
       await OutboxRepository.createPaymentOutboxEvent(trx, "PAYMENT_EXPIRED", 30, {

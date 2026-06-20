@@ -1,18 +1,18 @@
 import db from "../db/knex.js";
 import type { Knex } from "knex";
-import logger from "../utils/logger.js";
 import crypto from "crypto";
+type DB = Knex | Knex.Transaction;
 
 export const OutboxRepository = {
-  async createOrderOutboxEvent(trx: Knex.Transaction, eventType: string, payload: Object) {
-    await trx("orders_outbox")
+  async createOrderOutboxEvent(db: DB, eventType: string, payload: Object) {
+    await db("orders_outbox")
       .insert({
         id: crypto.randomUUID(),
         event_type: eventType,
         payload: JSON.stringify(payload),
         status: "PENDING",
-        created_at: trx.fn.now(),
-        next_retry_at: trx.raw("NOW() + INTERVAL '3000 seconds'"),
+        created_at: db.fn.now(),
+        next_retry_at: db.raw("NOW() + INTERVAL '30 seconds'"),
       })
       .returning("*");
   },

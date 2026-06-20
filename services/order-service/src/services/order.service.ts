@@ -120,7 +120,7 @@ const reserveStocks = async (
 // ---------------- Main Service Object ----------------
 export const OrderService = {
   async rollbackStocks(orderId: string) {
-    const orderItems = await OrderRepository.getOrderItems(orderId);
+    const orderItems = await OrderRepository.getOrderItems(db, orderId);
 
     const keys: string[] = [];
     const args: string[] = [String(orderItems.length)];

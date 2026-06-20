@@ -98,7 +98,7 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
     res.write(`event: TIMEOUT\n`);
     res.write(`data: {}\n\n`);
     res.end();
-  }, 120_000);
+  }, 60_000);
 
   req.on("close", () => {
     clearInterval(keepAliveInterval);

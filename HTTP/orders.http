@@ -1,7 +1,7 @@
 POST http://localhost:3000/api/v1/orders
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0YWY5MTg3ZS0xNWRkLTQxNjAtYWZmNC04NzRhZWM5MjMxOTQiLCJyb2xlIjoiQVVESUVOQ0UiLCJpYXQiOjE3ODE2MjQzMjEsImV4cCI6MTc4MTcxMDcyMX0.BbAiYrrVT5KDKCyWEQsJxiIc304nsR3klv1SraYYuF8
-Idempotency-Key: f81d4fae-7dec-11d0-a765-00a0c91e6b01
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0YWY5MTg3ZS0xNWRkLTQxNjAtYWZmNC04NzRhZWM5MjMxOTQiLCJyb2xlIjoiT1JHQU5JWkVSIiwiaWF0IjoxNzgxODYzODkwLCJleHAiOjE3ODE5NTAyOTB9.eJ8LCO3dtBwqDE76y7LTXcPJJoJ8F32IgbT6S-Y4u78
+Idempotency-Key: f81d4fae-7dec-11d0-a765-00a0c91e6b01GET
     
 {
     "paymentMethod": "stripe",
@@ -9,7 +9,7 @@ Idempotency-Key: f81d4fae-7dec-11d0-a765-00a0c91e6b01
         {
             "concertId": "8a1b2c3d-4e5f-4a6b-8c9d-000000000001",
             "ticketTypeId": "a1111111-1111-4111-8111-111111111111",
-            "quantity": 1
+            "quantity": 2
         }
     ]
 }

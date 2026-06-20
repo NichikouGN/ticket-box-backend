@@ -3,6 +3,7 @@ import db from "../db/knex.js"; // Your existing Knex instance for DB operations
 import dotenv from "dotenv";
 import { paymentQueue } from "../queues/payment.queue.js"; // Your existing BullMQ queue instance
 import logger from "../utils/logger.js";
+import { ticketQueue } from "../queues/ticket.queue.js";
 
 dotenv.config();
 
@@ -44,6 +45,12 @@ async function startOutboxRelay() {
             backoff: { type: "exponential", delay: 3_000 },
           });
 
+          break;
+        case "GENERATE_TICKETS":
+          await ticketQueue.add("GENERATE_TICKETS", outboxRow.payload, {
+            attempts: 3,
+            backoff: { type: "exponential", delay: 3_000 },
+          });
           break;
         default:
           logger.warn(

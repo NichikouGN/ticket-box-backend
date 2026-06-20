@@ -12,7 +12,10 @@ export type OrderItemInput = {
 };
 
 export const OrderRepository = {
-  async getOrderItems(orderId: string): Promise<
+  async getOrderItems(
+    db: DB,
+    orderId: string,
+  ): Promise<
     {
       userId: string;
       concertId: string;
@@ -23,7 +26,7 @@ export const OrderRepository = {
     const result = await db("orders")
       .join("order_items", "order_items.order_id", "orders.id")
       .select(
-        "order_items.user_id",
+        "orders.user_id",
         "order_items.concert_id",
         "order_items.ticket_type_id",
         "order_items.quantity",
@@ -38,11 +41,11 @@ export const OrderRepository = {
     }));
   },
 
-  async findById(orderId: string) {
+  async findById(db: DB, orderId: string) {
     return db("orders").where("id", orderId).first();
   },
 
-  async findByIdempotencyKey(idempotencyKey: string) {
+  async findByIdempotencyKey(db: DB, idempotencyKey: string) {
     return db("orders").where("idempotency_key", idempotencyKey).first();
   },
 
@@ -89,7 +92,7 @@ export const OrderRepository = {
     await db("orders").where("id", orderId).update({ status, updated_at: db.fn.now() });
   },
 
-  async findOrderItems(orderId: string) {
+  async findOrderItems(db: DB, orderId: string) {
     return db("order_items")
       .where("order_id", orderId)
       .select("concert_id", "ticket_type_id", "quantity", "unit_price", "line_total");

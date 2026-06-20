@@ -6,9 +6,6 @@ const app = express();
 const PORT = 3000;
 
 app.use(morgan("dev"));
-app.use((req, res, next) => {
-  next();
-});
 app.use(routes);
 
 app.listen(PORT, () => {
