@@ -1,6 +1,9 @@
 import express from "express";
 import morgan from "morgan";
 import { createNotificationWorker } from "./workers/notification.worker.js";
+import notificationRoutes from "./routes/notification.route.js";
+import { Redis } from "ioredis";
+import type { Response } from "express";
 
 const app = express();
 const PORT = Number(process.env.PORT || 3007);
@@ -19,8 +22,41 @@ const healthHandler = (req: express.Request, res: express.Response) => {
   });
 };
 
+export const activeSSEConnections = new Map<string, Response>();
+const redisSubcriber = new Redis("redis://localhost:6379");
+
+redisSubcriber.subscribe("notification_updates", (err) => {
+  if (err) {
+    console.error("Failed to subscribe to notification_updates channel:", err);
+  }
+});
+
+redisSubcriber.on("message", (channel, message) => {
+  if (channel === "notification_updates") {
+    const { userId, payload } = JSON.parse(message) as {
+      userId: string;
+      payload: {
+        id: string;
+        eventType: string;
+        title: string;
+        message: string;
+        userStatus: string;
+        createdAt: Date;
+      };
+    };
+    const clientStream = activeSSEConnections.get(userId);
+    if (clientStream) {
+      clientStream.write(`event: NOTIFICATION_UPDATED\n`);
+      clientStream.write(`data: ${JSON.stringify({ payload })}\n\n`);
+      clientStream.end();
+    }
+  }
+});
+
 app.get("/health", healthHandler);
 app.get("/api/v1/health", healthHandler);
+
+app.get("/", notificationRoutes);
 
 app.use((req, res) => {
   console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);

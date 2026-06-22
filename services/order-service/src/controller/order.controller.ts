@@ -32,11 +32,7 @@ export const createOrder = async (req: Request, res: Response) => {
       "[CONTROLLER] Received request to create order",
     );
 
-    const result = await OrderService.createOrder(
-      req.user?.userId || "",
-      parsedBody.data,
-      idempotencyKey,
-    );
+    const result = await OrderService.createOrder(req.user?.userId || "", parsedBody.data, idempotencyKey);
 
     return res.status(201).json({
       success: true,
@@ -98,7 +94,7 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
     res.write(`event: TIMEOUT\n`);
     res.write(`data: {}\n\n`);
     res.end();
-  }, 60_000);
+  });
 
   req.on("close", () => {
     clearInterval(keepAliveInterval);

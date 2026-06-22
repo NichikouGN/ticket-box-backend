@@ -32,7 +32,29 @@ npm run dev
 
 ## 4. Version
 
-### v0.4.0 (2026-06-20)
+### v0.5.0: Notification Service (2026-06-22)
+
+- Added Notification Service to handle user notifications.
+  1. Added notification worker and job to handle notification creation asynchronously.
+  2. Added notification route, controller to handle fetching user notifications and marking them as read.
+  3. Added SSE to handle real-time notifications to users.
+  4. Added notification_reminders table to store notification reminders for upcoming concerts.
+
+  ```sql
+  CREATE TABLE notification_reminders (
+      id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id             UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      metadata            JSONB NOT NULL,
+      scheduled_at        TIMESTAMPTZ NOT NULL,
+      processed_at        TIMESTAMPTZ,
+      created_at          TIMESTAMPTZ DEFAULT now(),
+  );
+  ```
+
+  5. Added cron job to automatically create notification reminders for upcoming concerts.
+  6. Added Email Notification using Nodemailer to send email notifications to users for ticket purchase confirmation and reminders.
+
+### v0.4.0: Ticket Service (2026-06-20)
 
 - Added Ticket Service to handle ticket management and check-in.
   1. Added ticket worker and job to handle ticket creation asynchronously.
@@ -55,7 +77,7 @@ npm run dev
 
 - Updated Order Service to emit a CREATE_TICKET event to Ticket Service upon order creation and payment success.
 
-### v0.3.0 (2026-06-18)
+### v0.3.0: Order and Payment Services (2026-06-18)
 
 - Added BullMQ to handle order processing and payment processing asynchronously.
   1. Added order and payment queue to handle order creation and payment processing.
@@ -102,7 +124,7 @@ npm run dev
   );
   ```
 
-### v0.2.0 (2026-06-06)
+### v0.2.0: Concert Service (2026-06-06)
 
 - Created concerts microservice
 - Allowed user to view list of concerts, concert details, ticket info and remaining stocks (only published concerts).
@@ -111,7 +133,7 @@ npm run dev
 - Added Redis to act as a cache layer for concert service
 - Changed User Service to use zod for http validation.
 
-### v0.1.0 (2026-06-05)
+### v0.1.0: Initial Release (2026-06-05)
 
 - Created database schema and seed
 - Created User Microservices with the following functions

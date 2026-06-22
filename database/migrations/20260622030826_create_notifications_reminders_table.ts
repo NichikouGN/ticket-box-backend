@@ -13,9 +13,9 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp("scheduled_at", { useTz: true }).defaultTo(knex.fn.now());
     table.timestamp("processed_at", { useTz: true }).defaultTo(knex.fn.now());
 
-    table.index("user_id", "idx_notifications_user_id");
-    table.index("scheduled_at", "idx_notifications_scheduled_at");
-    table.index("processed_at", "idx_notifications_processed_at");
+    table.index("user_id", "idx_notifications_reminders_user_id");
+    table.index("scheduled_at", "idx_notifications_reminders_scheduled_at");
+    table.index("processed_at", "idx_notifications_reminders_processed_at");
   });
 }
 

@@ -14,6 +14,7 @@ export const startReminderCron = () => {
     running = true;
 
     try {
+      logger.info("[REMINDER CRON] Fetching pending reminders from notifications_reminders table");
       const pendingReminders = await db("notifications_reminders")
         .where("processed_at", null)
         // .where("scheduled_at", "<=", db.fn.now())
@@ -34,7 +35,10 @@ export const startReminderCron = () => {
 
   const handlePendingReminders = async (reminder: any) => {
     try {
-      await OutboxRepository.createNotificationEvent(db, "REMINDER_24H", 30, reminder.metadata);
+      db.transaction(async (trx) => {
+        await OutboxRepository.createNotificationEvent(trx, "REMINDER_24H", 30, reminder.metadata);
+        await db("notifications_reminders").where({ id: reminder.id }).update({ processed_at: db.fn.now() });
+      });
     } catch (err) {
       logger.error({ err }, "[REMINDER CRON] Failed to create notification event for pending reminder");
     }
