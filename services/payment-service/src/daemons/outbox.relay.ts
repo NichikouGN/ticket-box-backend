@@ -78,9 +78,7 @@ async function startOutboxRelay() {
       logger.error({ err }, "[PAYMENT OUTBOX] Failed to relay message to BullMQ");
       await db("payments_outbox")
         .where({ id: outboxRow.id })
-        .update({ next_retry_at: new Date(Date.now() + 30 * 1000) })
-        .forUpdate()
-        .skipLocked();
+        .update({ next_retry_at: new Date(Date.now() + 30 * 1000) });
     }
   });
 }

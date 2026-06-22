@@ -10,13 +10,13 @@ export async function up(knex: Knex): Promise<void> {
 
     table.uuid("user_id").notNullable().references("id").inTable("users").onDelete("CASCADE");
 
-    table.string("type", 50).notNullable().checkIn(["ORDER_CONFIRM", "REMINDER_24H"]);
+    table.string("type", 50).notNullable().checkIn(["ORDER_CONFIRMATION", "REMINDER_24H"]);
 
     table.string("title", 255).notNullable();
 
     table.text("message").notNullable();
 
-    table.text("status").notNullable().defaultTo("PENDING").checkIn(["PENDING", "SENT", "FAILED"]);
+    // table.text("status").notNullable().defaultTo("PENDING").checkIn(["PENDING", "SENT", "FAILED"]);
 
     table.text("user_status").notNullable().defaultTo("UNREAD").checkIn(["READ", "UNREAD"]);
 
@@ -28,7 +28,7 @@ export async function up(knex: Knex): Promise<void> {
 
     table.index("user_id", "idx_notifications_user_id");
     table.index("created_at", "idx_notifications_created_at");
-    table.index("status", "idx_notifications_status");
+    table.index("type", "idx_notifications_type");
     table.index("user_status", "idx_notifications_user_status");
   });
 }

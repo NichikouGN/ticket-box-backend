@@ -1,0 +1,33 @@
+import express from "express";
+import morgan from "morgan";
+import { createNotificationWorker } from "./workers/notification.worker.js";
+
+const app = express();
+const PORT = Number(process.env.PORT || 3007);
+
+app.use(morgan("dev"));
+
+app.use(express.json());
+
+const healthHandler = (req: express.Request, res: express.Response) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      service: "notification-service",
+      status: "running",
+    },
+  });
+};
+
+app.get("/health", healthHandler);
+app.get("/api/v1/health", healthHandler);
+
+app.use((req, res) => {
+  console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ success: false, message: "Not Found" });
+});
+
+app.listen(PORT, async () => {
+  console.log(`Notification Service listening on ${PORT}`);
+  await createNotificationWorker();
+});

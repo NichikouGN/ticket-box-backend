@@ -2,6 +2,10 @@ import { OrderRepository } from "../repository/order.repository.js";
 import db from "../db/knex.js";
 import { redis } from "../clients/redis.client.js";
 import { handleTicketPreparation } from "./handleTicketPreparation.job.js";
+import { OutboxRepository } from "../repository/outbox.repository.js";
+import { concertClient } from "../clients/concert.client.js";
+import logger from "../utils/logger.js";
+import { userClient } from "../clients/user.client.js";
 
 export const handlePaymentSuccessJob = async (job: any) => {
   const { orderId } = job.data as {
@@ -9,8 +13,70 @@ export const handlePaymentSuccessJob = async (job: any) => {
   };
 
   try {
-    await OrderRepository.updateOrderStatus(db, orderId, "COMPLETED");
-    await handleTicketPreparation(orderId);
+    const items = await handleTicketPreparation(orderId);
+
+    const userId = items[0]?.userId;
+    const concertId = items[0]?.concertId;
+
+    const userData = (await userClient.get(`/users/${userId}`)).data as {
+      success: boolean;
+      data: {
+        id: string;
+        email: string;
+        full_name: string;
+        role: string;
+        status: string;
+      };
+    };
+
+    const concertData = (await concertClient.get(`/concerts/${concertId}`)).data as {
+      success: boolean;
+      data: {
+        id: string;
+        title: string;
+        venue: string;
+        event_date: string;
+      };
+    };
+
+    const ticketTypes = (
+      await concertClient.post(`/concerts/${concertId}/ticket-types`, {
+        ticketTypeIds: items.map((item) => item.ticketTypeId),
+      })
+    ).data as {
+      success: boolean;
+      data: {
+        ticketTypeId: string;
+        name: string;
+        price: number;
+      }[];
+    };
+
+    const quantityMap = new Map<string, number>(
+      items.map((item) => [item.ticketTypeId, item.quantity]),
+    );
+
+    const enrichedTicketTypes = ticketTypes.data.map((tt) => {
+      const quantity = quantityMap.get(tt.ticketTypeId) || 0;
+      return {
+        ...tt,
+        quantity,
+      };
+    });
+
+    db.transaction(async (trx) => {
+      await OrderRepository.updateOrderStatus(trx, orderId, "COMPLETED");
+      await OutboxRepository.createOrderOutboxEvent(trx, "GENERATE_TICKETS", {
+        items: items,
+        orderId: orderId,
+      });
+      await OutboxRepository.createOrderOutboxEvent(trx, "NOTIFY_USER", {
+        orderId: orderId,
+        userInfo: userData.data,
+        concertData: concertData.data,
+        ticketTypes: enrichedTicketTypes,
+      });
+    });
 
     const redisPublisher = redis.duplicate();
     await redisPublisher.publish(

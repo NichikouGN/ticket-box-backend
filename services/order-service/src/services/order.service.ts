@@ -169,7 +169,10 @@ export const OrderService = {
       throw new AppError("User not found", 404);
     }
 
-    const existingRecord = await getIdempotencyRecord(idempotencyKeyValue);
+    const [existingRecord, catalog] = await Promise.all([
+      getIdempotencyRecord(idempotencyKeyValue),
+      ensureConcertCache(concertId),
+    ]);
 
     if (existingRecord?.status === "PROCESSING") {
       throw new AppError("Order is already being processed", 409);
@@ -181,7 +184,6 @@ export const OrderService = {
 
     await setIdempotencyRecord(idempotencyKeyValue, { status: "PROCESSING" });
 
-    const catalog = await ensureConcertCache(concertId);
     const catalogMap = buildCatalogMap(catalog);
     const orderId = crypto.randomUUID();
 
@@ -228,7 +230,7 @@ export const OrderService = {
         });
       });
 
-      await orderQueue.add(
+      orderQueue.add(
         "CLEANUP_EXPIRED_ORDER",
         {
           orderId: orderId,
@@ -236,11 +238,6 @@ export const OrderService = {
         {
           delay: CLEANUP_WINDOW_MINUTES * 60 * 1000,
         },
-      );
-
-      logger.info(
-        { orderId: orderId },
-        "[SERVICE] Cleanup job scheduled for order after expiration window:",
       );
 
       const response: OrderResponse = {
@@ -257,7 +254,6 @@ export const OrderService = {
       });
 
       logger.info({ orderId: orderId }, "[SERVICE] Order created successfully with ID:", orderId);
-
       return response;
     } catch (error) {
       console.log(error);

@@ -5,16 +5,8 @@ import { OutboxRepository } from "../repository/outbox.repository.js";
 export const handleTicketPreparation = async (orderId: string) => {
   try {
     const items = await OrderRepository.getOrderItems(db, orderId);
-    const userIds = new Set<string>(items.map((item) => item.userId));
 
-    if (userIds.size > 1) {
-      throw new Error("Order items belong to different users.");
-    }
-
-    await OutboxRepository.createOrderOutboxEvent(db, "GENERATE_TICKETS", {
-      items: items,
-      orderId: orderId,
-    });
+    return items;
   } catch (error) {
     console.log("Error in handleTicketPreparation:", error);
     throw error;

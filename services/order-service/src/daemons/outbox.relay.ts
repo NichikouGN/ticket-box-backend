@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { paymentQueue } from "../queues/payment.queue.js"; // Your existing BullMQ queue instance
 import logger from "../utils/logger.js";
 import { ticketQueue } from "../queues/ticket.queue.js";
+import { notificationQueue } from "../queues/notification.queue.js";
 
 dotenv.config();
 
@@ -52,6 +53,12 @@ async function startOutboxRelay() {
             backoff: { type: "exponential", delay: 3_000 },
           });
           break;
+        case "NOTIFY_USER":
+          await notificationQueue.add("NOTIFY_USER", outboxRow.payload, {
+            attempts: 3,
+            backoff: { type: "exponential", delay: 3_000 },
+          });
+          break;
         default:
           logger.warn(
             { eventType: outboxRow.event_type },
@@ -63,9 +70,7 @@ async function startOutboxRelay() {
       logger.error({ err }, "[ORDER OUTBOX] Failed to relay message to BullMQ");
       await db("orders_outbox")
         .where({ id: outboxRow.id })
-        .update({ next_retry_at: new Date(Date.now() + 30 * 1000) })
-        .forUpdate()
-        .skipLocked();
+        .update({ next_retry_at: new Date(Date.now() + 30 * 1000) });
     }
   });
 }

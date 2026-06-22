@@ -8,7 +8,6 @@ import type {
   CreateConcertInput,
   UpdateConcertInput,
 } from "../types/concert.types.js";
-import { notificationQueue } from "../queues/notification.queue.js";
 import {
   safeRedisDel,
   safeRedisMGet,

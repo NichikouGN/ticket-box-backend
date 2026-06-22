@@ -2,6 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import concertRoutes from "./routes/concert.routes.js";
 import organizerRoutes from "./routes/organizer.routes.js";
+import internalRoutes from "./routes/internnal.routes.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 3003);
@@ -21,6 +22,7 @@ const healthHandler = (req: express.Request, res: express.Response) => {
 app.get("/health", healthHandler);
 app.get("/api/v1/health", healthHandler);
 
+app.use("/internal", internalRoutes);
 app.use("/organizer", organizerRoutes);
 app.use("/", concertRoutes);
 

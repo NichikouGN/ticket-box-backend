@@ -78,7 +78,18 @@ export const ConcertRepository = {
       .offset(offset);
   },
 
-  async getConcertDetail(concertId: string) {
+  async getConcertDetail(concertId: string): Promise<{
+    id: string;
+    title: string;
+    description: string | null;
+    artist: string;
+    venue: string;
+    event_date: Date;
+    cover_image: string | null;
+    seat_map_svg_url: string | null;
+    status: "DRAFT" | "PUBLISHED" | "CANCELLED";
+    artists: string[];
+  } | null> {
     return db("concerts as c")
       .leftJoin("artists as a", "a.concert_id", "c.id")
       .select([...concertColumns, artistAggregation])
@@ -111,16 +122,6 @@ export const ConcertRepository = {
       .orderBy("tt.price", "asc");
   },
 
-  // async getConcertWithTickets(concertId: string) {
-  // const concert = await this.getConcertDetail(concertId);
-  // if (!concert) {
-  // return null;
-  // }
-  //
-  // const ticketTypes = await this.getTicketTypes(concertId);
-  // return { concert, ticketTypes };
-  // },
-
   async getConcertTicketsDetails(concertId: string) {
     const concert = await this.getConcertDetail(concertId);
 
@@ -131,6 +132,33 @@ export const ConcertRepository = {
     const ticketTypes = await this.getTicketTypes(concertId);
 
     return { concert, ticketTypes };
+  },
+
+  async getTicketTypesByIds(
+    concertId: string,
+    ticketTypeIds: string[],
+  ): Promise<
+    {
+      id: string;
+      name: string;
+      price: number;
+      total_quantity: number;
+      max_per_user: number;
+      sold_quantity: number;
+    }[]
+  > {
+    return db("ticket_types as tt")
+      .select(
+        "tt.id",
+        "tt.name",
+        "tt.price",
+        "tt.total_quantity",
+        "tt.max_per_user",
+        "tt.sold_quantity",
+      )
+      .where("tt.concert_id", concertId)
+      .whereIn("tt.id", ticketTypeIds)
+      .orderBy("tt.price", "asc");
   },
 
   async createConcert(
