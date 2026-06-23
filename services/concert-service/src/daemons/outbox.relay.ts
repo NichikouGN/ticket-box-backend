@@ -2,7 +2,7 @@ import pg from "pg";
 import db from "../db/knex.js"; // Your existing Knex instance for DB operations
 import dotenv from "dotenv";
 import logger from "../utils/logger.js";
-import { notificationQueue } from "../queues/notification.queue.js";
+import { concertQueue } from "../queues/concert.queue.js";
 
 dotenv.config();
 
@@ -31,6 +31,15 @@ async function startOutboxRelay() {
 
     try {
       switch (outboxRow.event_type) {
+        case "GENERATE_ARTIST_BIOS":
+          await concertQueue.add("GENERATE_ARTIST_BIOS", outboxRow.payload, {
+            attempts: 5,
+            backoff: {
+              type: "exponential",
+              delay: 30_0000, // 30 seconds
+            },
+          });
+          break;
         default:
           logger.warn(
             { eventType: outboxRow.event_type },

@@ -20,24 +20,6 @@ const artistAggregation = db.raw(
 );
 
 export const ConcertRepository = {
-  async createArtist(name: string) {
-    const [result] = await db("artists").insert({ name }).returning("*");
-    return result;
-  },
-
-  async findArtistByName(name: string): Promise<{ id: string; name: string } | null> {
-    return db("artists").where("name", name).first();
-  },
-
-  async linkArtistsToConcert(concertId: string, artistIds: string[]) {
-    const dbRecords = artistIds.map((artistId) => ({
-      concert_id: concertId,
-      artist_id: artistId,
-    }));
-
-    await db("concerts_artists").insert(dbRecords).onConflict(["concert_id", "artist_id"]).ignore();
-  },
-
   async countAllConcerts() {
     const result = await db("concerts as c").count<{ count: string }>({ count: "c.id" }).first();
     return Number(result?.count ?? 0);
@@ -215,138 +197,29 @@ export const ConcertRepository = {
     }));
   },
 
-  // async updateConcert(concertId: string, updates: UpdateConcertInput) {
-  //   return db.transaction(async (trx) => {
-  //     const existingConcert = await trx("concerts").where("id", concertId).first();
-  //     if (!existingConcert) {
-  //       return null;
-  //     }
-
-  //     const concertPatch: Record<string, unknown> = {};
-  //     if (updates.title !== undefined) concertPatch.title = updates.title;
-  //     if (updates.description !== undefined) concertPatch.description = updates.description ?? null;
-  //     if (updates.venue !== undefined) concertPatch.venue = updates.venue;
-  //     if (updates.eventDate !== undefined) concertPatch.event_date = updates.eventDate;
-  //     if (updates.thumbnailUrl !== undefined) concertPatch.cover_image = updates.thumbnailUrl ?? null;
-  //     if (updates.seatMapSvgUrl !== undefined) concertPatch.seat_map_svg_url = updates.seatMapSvgUrl ?? null;
-
-  //     if (Object.keys(concertPatch).length > 0) {
-  //       await trx("concerts").where("id", concertId).update(concertPatch);
-  //     }
-
-  //     let replacedTicketTypeIds: string[] = [];
-
-  //     if (updates.artists !== undefined) {
-  //       await trx("artists").where("concert_id", concertId).del();
-  //       if (updates.artists.length > 0) {
-  //         await trx("artists").insert(
-  //           updates.artists.map((name) => ({
-  //             concert_id: concertId,
-  //             name,
-  //           })),
-  //         );
-  //       }
-  //     }
-
-  //     if (updates.ticketTypes !== undefined) {
-  //       const existingTicketTypes = await trx("ticket_types").select("id").where("concert_id", concertId);
-  //       replacedTicketTypeIds = existingTicketTypes.map((ticketType: { id: string }) => ticketType.id);
-  //       await trx("ticket_types").where("concert_id", concertId).del();
-
-  //       if (updates.ticketTypes.length > 0) {
-  //         await trx("ticket_types").insert(
-  //           updates.ticketTypes.map((ticketType) => ({
-  //             concert_id: concertId,
-  //             name: ticketType.name,
-  //             price: ticketType.price,
-  //             total_quantity: ticketType.totalCapacity,
-  //             max_per_user: ticketType.maxPerUser,
-  //             sold_quantity: 0,
-  //           })),
-  //         );
-  //       }
-  //     }
-
-  //     return {
-  //       concertId,
-  //       replacedTicketTypeIds,
-  //     };
-  //   });
-  // },
-
-  async cancelConcert(concertId: string, organizerId: string, reason: string | null) {
-    return db.transaction(async (trx) => {
-      const concert = await trx("concerts").where("id", concertId).first();
-      if (!concert) {
-        return null;
-      }
-
-      if (concert.status !== "PUBLISHED") {
-        return { updated: false };
-      }
-
-      await trx("concerts").where("id", concertId).update({ status: "CANCELLED" });
-      await trx("audit_logs").insert({
-        actor_id: organizerId,
-        action: "CANCEL_CONCERT",
-        target_type: "concert",
-        target_id: concertId,
-        old_value: trx.raw("?::jsonb", [JSON.stringify({ status: concert.status })]),
-        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "CANCELLED" })]),
-        reason,
-      });
-
-      return { updated: true };
-    });
+  async findArtistAndConcertById(concertId: string, artistIds: string[]): Promise<string[]> {
+    return await db("concerts_artists")
+      .where({ concert_id: concertId })
+      .whereIn("artist_id", artistIds)
+      .returning("artist_id")
+      .first();
   },
 
-  async publishConcert(concertId: string, organizerId: string) {
-    return db.transaction(async (trx) => {
-      const concert = await trx("concerts").where("id", concertId).first();
-      if (!concert) {
-        return null;
-      }
-
-      if (concert.status !== "DRAFT") {
-        return { updated: false };
-      }
-
-      await trx("concerts").where("id", concertId).update({ status: "PUBLISHED" });
-      await trx("audit_logs").insert({
-        actor_id: organizerId,
-        action: "PUBLISH_CONCERT",
-        target_type: "concert",
-        target_id: concertId,
-        old_value: trx.raw("?::jsonb", [JSON.stringify({ status: concert.status })]),
-        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "PUBLISHED" })]),
-      });
-
-      return { updated: true };
-    });
+  async createArtist(name: string) {
+    const [result] = await db("artists").insert({ name }).returning("*");
+    return result;
   },
 
-  async restoreConcert(concertId: string, organizerId: string) {
-    return db.transaction(async (trx) => {
-      const concert = await trx("concerts").where("id", concertId).first();
-      if (!concert) {
-        return null;
-      }
+  async findArtistByName(name: string): Promise<{ id: string; name: string } | null> {
+    return await db("artists").where("name", name).first();
+  },
 
-      if (concert.status !== "CANCELLED") {
-        return { updated: false };
-      }
+  async linkArtistsToConcert(concertId: string, artistIds: string[]) {
+    const dbRecords = artistIds.map((artistId) => ({
+      concert_id: concertId,
+      artist_id: artistId,
+    }));
 
-      await trx("concerts").where("id", concertId).update({ status: "PUBLISHED" });
-      await trx("audit_logs").insert({
-        actor_id: organizerId,
-        action: "RESTORE_CONCERT",
-        target_type: "concert",
-        target_id: concertId,
-        old_value: trx.raw("?::jsonb", [JSON.stringify({ status: concert.status })]),
-        new_value: trx.raw("?::jsonb", [JSON.stringify({ status: "PUBLISHED" })]),
-      });
-
-      return { updated: true };
-    });
+    await db("concerts_artists").insert(dbRecords).onConflict(["concert_id", "artist_id"]).ignore();
   },
 };

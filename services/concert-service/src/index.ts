@@ -3,6 +3,7 @@ import morgan from "morgan";
 import concertRoutes from "./routes/concert.routes.js";
 import organizerRoutes from "./routes/organizer.routes.js";
 import internalRoutes from "./routes/internnal.routes.js";
+import { createConcertWorker } from "./workers/concert.worker.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 3003);
@@ -31,6 +32,7 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Not Found" });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await createConcertWorker();
   console.log(`Concert Service listening on ${PORT}`);
 });

@@ -1,7 +1,7 @@
 import pino from "pino";
 
 const logger = pino({
-  name: "payment-service",
+  name: "notification-service",
   level: process.env.LOG_LEVEL || "info",
   transport: {
     target: "pino-pretty",
