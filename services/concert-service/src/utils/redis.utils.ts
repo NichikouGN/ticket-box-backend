@@ -1,10 +1,11 @@
 import { redis } from "../infrastructure/redis.client.js";
 
-export const listKey = (page: number, limit: number) =>
-  `catalog:concerts:page:${page}:limit:${limit}`;
+export const listKey = (page: number, limit: number) => `catalog:concerts:page:${page}:limit:${limit}`;
 export const detailKey = (concertId: string) => `catalog:concert:${concertId}`;
 export const ticketsKey = (concertId: string) => `catalog:concert:${concertId}:tickets`;
-export const stockKey = (conertId: string) => `catalog:concert:${conertId}:stock`;
+export const ticketLimitationKey = (concertId: string, ticketTypeId: string) =>
+  `catalog:concert:${concertId}:ticket_limitation:${ticketTypeId}`;
+export const stockKey = (concertId: string) => `catalog:concert:${concertId}:stock`;
 
 export const safeRedisMGet = async (keys: string[]) => {
   try {
@@ -32,11 +33,7 @@ export const safeRedisSet = async (key: string, value: string, ttlSeconds: numbe
   }
 };
 
-export const safeRedisHSet = async (
-  key: string,
-  value: Record<string, unknown>,
-  ttlSeconds?: number,
-) => {
+export const safeRedisHSet = async (key: string, value: Record<string, unknown>, ttlSeconds?: number) => {
   try {
     await redis.hset(key, value);
     if (ttlSeconds) {

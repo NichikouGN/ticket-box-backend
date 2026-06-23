@@ -7,79 +7,97 @@ import {
   safeRedisDel,
   safeRedisHSet,
   stockKey,
+  ticketLimitationKey,
   ticketsKey,
 } from "../utils/redis.utils.js";
 import { notificationQueue } from "../queues/notification.queue.js";
+import db from "../db/knex.js";
+
+type ArtistResult = {
+  id: string;
+  name: string;
+};
 
 export const OrganizerService = {
-  /**
-   * Creates a new concert with the provided details
-   * @param input input data for creating a concert
-   * @param organizerId ID of the organizer creating the concert
-   * @returns Promise resolving to the result of the creation or an error if the creation fails
-   * @throws AppError with status 400 for invalid input data
-   * @throws AppError with status 401 for unauthorized access
-   * @throws AppError with status 500 for any unexpected errors during creation
-   */
-  async createConcert(input: CreateConcertInput, organizerId: string) {
-    const result = await ConcertRepository.createConcert(
-      {
-        concert: input,
-        artists: input.artists,
-        ticketTypes: input.ticketTypes,
-      },
-      organizerId,
-    );
+  async createArtists(name: string[]) {
+    let result: ArtistResult[] = [];
+    let existingArtists: ArtistResult[] = [];
 
-    await Promise.all(
-      result.ticketTypes.map((ticketType) =>
-        safeRedisHSet(
-          stockKey(result.concertId),
-          { [ticketType.id]: String(ticketType.total_quantity) },
-          24 * 60 * 60,
-        ),
-      ),
-    );
+    for (const artistName of name) {
+      if (artistName.trim() === "") {
+        throw new AppError("Artist names cannot be empty", 400);
+      }
 
-    await deleteKeysByPattern("catalog:concerts:page:*");
-    await safeRedisDel([detailKey(result.concertId), ticketsKey(result.concertId)]);
-
-    return { concert_id: result.concertId };
-  },
-
-  /**
-   * Updates an existing concert with the provided details
-   * @param concertId ID of the concert to update
-   * @param input input data for updating the concert
-   * @returns Promise resolving to the result of the update or an error if the update fails
-   * @throws AppError with status 400 for invalid input data
-   * @throws AppError with status 404 if the concert is not found
-   * @throws AppError with status 500 for any unexpected errors during update
-   */
-  async updateConcert(concertId: string, input: UpdateConcertInput) {
-    const result = await ConcertRepository.updateConcert(concertId, input);
-    if (!result) {
-      throw new AppError("Concert not found", 404);
+      const existingArtist = await ConcertRepository.findArtistByName(artistName);
+      if (existingArtist) {
+        existingArtists.push(existingArtist);
+        continue;
+      }
+      const artist = await ConcertRepository.createArtist(artistName);
+      result.push(artist);
     }
 
-    const invalidationKeys = [detailKey(concertId), ticketsKey(concertId), stockKey(concertId)];
-
-    await safeRedisDel(invalidationKeys);
-    await deleteKeysByPattern("catalog:concerts:page:*");
-
-    return null;
+    return { existingArtists: [...existingArtists], newArtists: [...result] };
   },
 
-  /**
-   * Cancels an existing concert with the provided details
-   * @param concertId ID of the concert to cancel
-   * @param organizerId ID of the organizer canceling the concert
-   * @param reason Optional reason for cancellation
-   * @returns Promise resolving to the result of the cancellation or an error if the cancellation fails
-   * @throws AppError with status 404 if the concert is not found
-   * @throws AppError with status 400 if the concert is not published
-   * @throws AppError with status 500 for any unexpected errors during cancellation
-   */
+  async linkArtistsToConcert(concertId: string, artistIds: string[]) {
+    await ConcertRepository.linkArtistsToConcert(concertId, artistIds);
+  },
+
+  async createConcert(input: CreateConcertInput, organizerId: string) {
+    try {
+      let ticketTypeResults: {
+        id: string;
+        name: string;
+        totalQuantity: number;
+        maxPerUser: number;
+      }[] = [];
+
+      const concertId = crypto.randomUUID();
+
+      db.transaction(async (trx) => {
+        await ConcertRepository.createConcert(trx, organizerId, concertId, input);
+        ticketTypeResults = await ConcertRepository.createTicketType(trx, concertId, input.ticketTypes);
+      });
+
+      await Promise.all([
+        ticketTypeResults.map((ticketType) => {
+          safeRedisHSet(stockKey(concertId), { [ticketType.id]: String(ticketType.totalQuantity) }, 24 * 60 * 60);
+          safeRedisHSet(
+            ticketLimitationKey(concertId, ticketType.id),
+            { maxPerUser: String(ticketType.maxPerUser) },
+            24 * 60 * 60,
+          );
+        }),
+
+        deleteKeysByPattern(`catalog:concerts:page:*`),
+        safeRedisDel([detailKey(concertId), ticketsKey(concertId)]),
+      ]);
+
+      return { concert_id: concertId };
+    } catch (error) {
+      console.error("Error creating concert:", error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError("Failed to create concert", 500);
+    }
+  },
+
+  // async updateConcert(concertId: string, input: UpdateConcertInput) {
+  //   const result = await ConcertRepository.updateConcert(concertId, input);
+  //   if (!result) {
+  //     throw new AppError("Concert not found", 404);
+  //   }
+
+  //   const invalidationKeys = [detailKey(concertId), ticketsKey(concertId), stockKey(concertId)];
+
+  //   await safeRedisDel(invalidationKeys);
+  //   await deleteKeysByPattern("catalog:concerts:page:*");
+
+  //   return null;
+  // },
+
   async cancelConcert(concertId: string, organizerId: string, reason: string | null) {
     const result = await ConcertRepository.cancelConcert(concertId, organizerId, reason);
     if (!result) {
@@ -106,15 +124,6 @@ export const OrganizerService = {
     return null;
   },
 
-  /**
-   * Publishes an existing concert with the provided details
-   * @param concertId ID of the concert to publish
-   * @param organizerId ID of the organizer publishing the concert
-   * @returns Promise resolving to the result of the publication or an error if the publication fails
-   * @throws AppError with status 404 if the concert is not found
-   * @throws AppError with status 400 if the concert is not in draft status
-   * @throws AppError with status 500 for any unexpected errors during publication
-   */
   async publishConcert(concertId: string, organizerId: string) {
     const result = await ConcertRepository.publishConcert(concertId, organizerId);
     if (!result) {
@@ -131,15 +140,6 @@ export const OrganizerService = {
     return null;
   },
 
-  /**
-   * Restores an existing concert with the provided details
-   * @param concertId ID of the concert to restore
-   * @param organizerId ID of the organizer restoring the concert
-   * @returns Promise resolving to the result of the restoration or an error if the restoration fails
-   * @throws AppError with status 404 if the concert is not found
-   * @throws AppError with status 400 if the concert is not in cancelled status
-   * @throws AppError with status 500 for any unexpected errors during restoration
-   */
   async restoreConcert(concertId: string, organizerId: string) {
     const result = await ConcertRepository.restoreConcert(concertId, organizerId);
     if (!result) {

@@ -12,8 +12,6 @@ export async function up(knex: Knex): Promise<void> {
 
     table.text("description");
 
-    table.text("artist").notNullable();
-
     table.text("venue").notNullable();
 
     table.timestamp("event_date", { useTz: true }).notNullable();
@@ -22,11 +20,7 @@ export async function up(knex: Knex): Promise<void> {
 
     table.text("seat_map_svg_url");
 
-    table
-      .text("status")
-      .notNullable()
-      .defaultTo("DRAFT")
-      .checkIn(["DRAFT", "PUBLISHED", "CANCELLED"]);
+    table.text("status").notNullable().defaultTo("DRAFT").checkIn(["DRAFT", "PUBLISHED", "CANCELLED"]);
 
     table.timestamp("created_at", { useTz: true }).defaultTo(knex.fn.now());
 

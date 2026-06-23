@@ -14,15 +14,14 @@ const ticketTypeSchema = z.object({
   price: z.coerce.number().int().nonnegative(),
   maxPerUser: z.coerce.number().int().positive(),
   totalCapacity: z.coerce.number().int().positive(),
-  saleStart: z.string().datetime().optional().nullable(),
-  saleEnd: z.string().datetime().optional().nullable(),
+  saleStart: z.string().datetime(),
+  saleEnd: z.string().datetime(),
 });
 
 export const createConcertSchema = z
   .object({
     title: z.string().min(1),
     description: z.string().optional().nullable(),
-    artists: z.array(z.string().min(1)).min(1),
     venue: z.string().min(1),
     eventDate: z.string().datetime(),
     thumbnailUrl: z.string().url().optional().nullable(),

@@ -31,8 +31,7 @@ const userPurchasedKey = (userId: string, concertId: string, ticketTypeId: strin
   `order:user:${userId}:concert:${concertId}:ticket_type:${ticketTypeId}:purchased`;
 
 // ---------------- Helper Functions ----------------
-const toPaymentDeadline = () =>
-  new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000).toISOString();
+const toPaymentDeadline = () => new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000).toISOString();
 
 const getIdempotencyRecord = async (key: string) => {
   try {
@@ -107,9 +106,7 @@ const reserveStocks = async (
     args.push(item.ticketTypeId, String(item.quantity), String(catalogItem.maxPerUser));
   }
 
-  const result = (await redis.eval(reserveStockLua, keys.length, ...keys, ...args)) as
-    | Array<string>
-    | string;
+  const result = (await redis.eval(reserveStockLua, keys.length, ...keys, ...args)) as Array<string> | string;
   const normalized = Array.isArray(result) ? result[0] : result;
 
   if (normalized !== "SUCCESS") {
@@ -126,10 +123,7 @@ export const OrderService = {
     const args: string[] = [String(orderItems.length)];
 
     for (const item of orderItems) {
-      keys.push(
-        concertStockKey(item.concertId),
-        userPurchasedKey(item.userId, item.concertId, item.ticketTypeId),
-      );
+      keys.push(concertStockKey(item.concertId), userPurchasedKey(item.userId, item.concertId, item.ticketTypeId));
       args.push(item.ticketTypeId, String(item.quantity), "0");
     }
 
@@ -144,11 +138,7 @@ export const OrderService = {
    * @returns A promise resolving to the created order response
    * @throws AppError if the user is unauthorized, if the order is already being processed, if the concert ID is missing, if ticket types are not found, or if there is an error during order creation
    */
-  async createOrder(
-    userId: string,
-    incoming: CreateOrderInput,
-    idempotencyKeyValue: string,
-  ): Promise<OrderResponse> {
+  async createOrder(userId: string, incoming: CreateOrderInput, idempotencyKeyValue: string): Promise<OrderResponse> {
     if (!userId) {
       throw new AppError("Unauthorized", 401);
     }
@@ -159,15 +149,15 @@ export const OrderService = {
       throw new AppError("Concert ID is required", 400);
     }
 
-    const userResponse = await userClient.get(`/users/${userId}`).catch((error) => {
-      throw new AppError(`Failed to fetch user data: ${error.message}`, 500);
-    });
+    // const userResponse = await userClient.get(`/users/${userId}`).catch((error) => {
+    //   throw new AppError(`Failed to fetch user data: ${error.message}`, 500);
+    // });
 
-    const user = userResponse?.data?.data;
+    // const user = userResponse?.data?.data;
 
-    if (!user) {
-      throw new AppError("User not found", 404);
-    }
+    // if (!user) {
+    //   throw new AppError("User not found", 404);
+    // }
 
     const [existingRecord, catalog] = await Promise.all([
       getIdempotencyRecord(idempotencyKeyValue),

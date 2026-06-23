@@ -9,7 +9,7 @@ export async function seed(knex: Knex): Promise<void> {
       organizer_id: "3f2d2f6a-6c2b-4b2f-9c5a-111111111111",
       title: "Summer Beats 2026",
       description: "A huge summer music festival in HCMC",
-      artist: "Various Artists",
+      // artist: "Various Artists",
       venue: "Saigon Exhibition Center",
       event_date: "2026-08-20T18:00:00+07",
       cover_image: "https://example.com/cover.jpg",
