@@ -1,13 +1,13 @@
 import type { Knex } from "knex";
 import db from "../db/knex.js";
 import type { CreateConcertInput, TicketTypeInput, UpdateConcertInput } from "../types/concert.types.js";
+import type { AIResponse } from "../types/artist.types.js";
 
 type DB = Knex | Knex.Transaction;
 const concertColumns = [
   "c.id",
   "c.title",
   "c.description",
-  "c.artist",
   "c.venue",
   "c.event_date",
   "c.cover_image",
@@ -20,6 +20,30 @@ const artistAggregation = db.raw(
 );
 
 export const ConcertRepository = {
+  async updateConcert(db: DB, concertId: string, concert: UpdateConcertInput) {
+    const updateData: Record<string, any> = {};
+
+    if (concert.title !== undefined) updateData.title = concert.title;
+    if (concert.description !== undefined) updateData.description = concert.description;
+    if (concert.venue !== undefined) updateData.venue = concert.venue;
+    if (concert.eventDate !== undefined) updateData.event_date = concert.eventDate;
+    if (concert.coverImage !== undefined) updateData.cover_image = concert.coverImage ?? null;
+    if (concert.seatMapSvg !== undefined) updateData.seat_map_svg_url = concert.seatMapSvg ?? null;
+
+    await db("concerts").where("id", concertId).update(updateData);
+  },
+
+  async deleteTicketTypes(db: DB, concertId: string) {
+    await db("ticket_types").where("concert_id", concertId).del();
+  },
+
+  async findConcertById(concertId: string): Promise<{
+    id: string;
+    status: "DRAFT" | "PUBLISHED" | "CANCELLED";
+  } | null> {
+    return db("concerts").where("id", concertId).select(["id", "status"]).first();
+  },
+
   async countAllConcerts() {
     const result = await db("concerts as c").count<{ count: string }>({ count: "c.id" }).first();
     return Number(result?.count ?? 0);
@@ -27,13 +51,13 @@ export const ConcertRepository = {
 
   async getAllConcerts(offset: number, limit: number) {
     return db("concerts as c")
-      .leftJoin("artists as a", "a.concert_id", "c.id")
+      .leftJoin("concerts_artists as ca", "ca.concert_id", "c.id")
+      .leftJoin("artists as a", "a.id", "ca.artist_id")
       .select([...concertColumns, artistAggregation])
       .groupBy(
         "c.id",
         "c.title",
         "c.description",
-        "c.artist",
         "c.venue",
         "c.event_date",
         "c.cover_image",
@@ -56,7 +80,8 @@ export const ConcertRepository = {
   },
   async getPublishedConcerts(offset: number, limit: number) {
     return db("concerts as c")
-      .leftJoin("artists as a", "a.concert_id", "c.id")
+      .leftJoin("concerts_artists as ca", "ca.concert_id", "c.id")
+      .leftJoin("artists as a", "a.id", "ca.artist_id")
       .select([...concertColumns, artistAggregation])
       .where("c.status", "PUBLISHED")
       .andWhere("c.event_date", ">=", db.fn.now())
@@ -64,7 +89,6 @@ export const ConcertRepository = {
         "c.id",
         "c.title",
         "c.description",
-        "c.artist",
         "c.venue",
         "c.event_date",
         "c.cover_image",
@@ -89,14 +113,14 @@ export const ConcertRepository = {
     artists: string[];
   } | null> {
     return db("concerts as c")
-      .leftJoin("artists as a", "a.concert_id", "c.id")
+      .leftJoin("concerts_artists as ca", "ca.concert_id", "c.id")
+      .leftJoin("artists as a", "a.id", "ca.artist_id")
       .select([...concertColumns, artistAggregation])
       .where("c.id", concertId)
       .groupBy(
         "c.id",
         "c.title",
         "c.description",
-        "c.artist",
         "c.venue",
         "c.event_date",
         "c.cover_image",
@@ -106,23 +130,29 @@ export const ConcertRepository = {
       .first();
   },
 
-  async getTicketTypes(concertId: string) {
-    return db("ticket_types as tt")
-      .select("tt.id", "tt.name", "tt.price", "tt.total_quantity", "tt.max_per_user", "tt.sold_quantity")
-      .where("tt.concert_id", concertId)
-      .orderBy("tt.price", "asc");
-  },
+  async getTicketTypes(concertId: string): Promise<
+    {
+      id: string;
+      name: string;
+      price: number;
+      totalQuantity: number;
+      maxPerUser: number;
+      soldQuantity: number;
+    }[]
+  > {
+    const rows = await db("ticket_types")
+      .select("id", "name", "price", "total_quantity", "max_per_user", "sold_quantity")
+      .where("concert_id", concertId)
+      .orderBy("price", "asc");
 
-  async getConcertTicketsDetails(concertId: string) {
-    const concert = await this.getConcertDetail(concertId);
-
-    if (!concert) {
-      return null;
-    }
-
-    const ticketTypes = await this.getTicketTypes(concertId);
-
-    return { concert, ticketTypes };
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      price: Number(row.price),
+      totalQuantity: Number(row.total_quantity),
+      maxPerUser: Number(row.max_per_user),
+      soldQuantity: Number(row.sold_quantity),
+    }));
   },
 
   async getTicketTypesByIds(
@@ -158,9 +188,9 @@ export const ConcertRepository = {
       description: concert.description ?? null,
       venue: concert.venue,
       event_date: concert.eventDate,
-      cover_image: concert.thumbnailUrl ?? null,
-      seat_map_svg_url: concert.seatMapSvgUrl ?? null,
-      status: "PUBLISHED",
+      cover_image: concert.coverImage ?? null,
+      seat_map_svg_url: concert.seatMapSvg ?? null,
+      status: "DRAFT",
     });
   },
 
@@ -197,29 +227,11 @@ export const ConcertRepository = {
     }));
   },
 
-  async findArtistAndConcertById(concertId: string, artistIds: string[]): Promise<string[]> {
-    return await db("concerts_artists")
-      .where({ concert_id: concertId })
-      .whereIn("artist_id", artistIds)
-      .returning("artist_id")
-      .first();
-  },
-
-  async createArtist(name: string) {
-    const [result] = await db("artists").insert({ name }).returning("*");
-    return result;
-  },
-
-  async findArtistByName(name: string): Promise<{ id: string; name: string } | null> {
-    return await db("artists").where("name", name).first();
-  },
-
-  async linkArtistsToConcert(concertId: string, artistIds: string[]) {
-    const dbRecords = artistIds.map((artistId) => ({
-      concert_id: concertId,
-      artist_id: artistId,
-    }));
-
-    await db("concerts_artists").insert(dbRecords).onConflict(["concert_id", "artist_id"]).ignore();
+  async updateConcertStatus(
+    db: Knex | Knex.Transaction,
+    concertId: string,
+    status: "DRAFT" | "PUBLISHED" | "CANCELLED",
+  ) {
+    await db("concerts").where("id", concertId).update({ status });
   },
 };

@@ -26,13 +26,13 @@ const artistResponseSchema = {
             type: "string",
             description: "The full name of the artist.",
           },
-          biography: {
+          aiBio: {
             type: "string",
             description:
               "A compelling, single-paragraph concert summary (4-6 sentences, roughly 80-120 words). It must be a cohesive narrative paragraph, not a list. Info is taken from the provided PDF",
           },
         },
-        required: ["trackingId", "artistName", "biography"],
+        required: ["trackingId", "artistName", "aiBio"],
       },
     },
   },
@@ -41,12 +41,20 @@ const artistResponseSchema = {
 
 export const handleGenerateArtistBios = async (data: {
   concertId: string;
-  artists: { id: string; name: string }[];
+  artistIds: string[];
   pdfBase64String: string;
   mimeType: string;
 }) => {
   try {
-    const { concertId, artists, pdfBase64String, mimeType } = data;
+    const { concertId, artistIds, pdfBase64String, mimeType } = data;
+
+    const artists = await ConcertRepository.findArtistForBioGeneration(artistIds, concertId);
+
+    if (!artists || artists.length !== artistIds.length) {
+      const foundArtistIds = new Set(artists.map((artist) => artist.id));
+      const missingArtistIds = artistIds.filter((id) => !foundArtistIds.has(id));
+      throw new UnrecoverableError(`The following artist IDs do not exist: ${missingArtistIds.join(", ")}`);
+    }
 
     const response = await ai.models.generateContent({
       model: "gemini-3.1-flash-lite",
@@ -87,6 +95,7 @@ export const handleGenerateArtistBios = async (data: {
     }
 
     const { matchedArtists } = validateData.data;
+    await ConcertRepository.updateArtistAIBios(concertId, matchedArtists);
     console.log("Matched Artists from AI Response:", matchedArtists);
   } catch (error) {
     console.error("Error in handleGenerateArtistBios:", error);

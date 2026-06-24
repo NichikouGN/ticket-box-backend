@@ -2,7 +2,8 @@ import { Router } from "express";
 import multer from "multer";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { rbacMiddleware } from "../middleware/rbac.middleware.js";
-import { OrganizerController } from "../controller/organizer.controller.js";
+import { OrganizerConcertController } from "../controller/organizerConcert.controller.js";
+import { OrganizerArtistController } from "../controller/organizerArtist.controller.js";
 
 const router = Router();
 
@@ -12,15 +13,16 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // L
 router.use(authMiddleware);
 router.use(rbacMiddleware("ORGANIZER"));
 
-router.post("/upload-pdf", upload.single("pdf"), OrganizerController.uploadPdf);
+router.post("/artists", OrganizerArtistController.createArtists);
 
-router.post("/artists", OrganizerController.createArtists);
+router.post("/concerts/:concertId/link-artist", OrganizerArtistController.linkArtistToConcert);
+router.post("/concerts/:concertId/generate-bio", upload.single("pdf"), OrganizerArtistController.generateArtistBios);
 
-router.post("/concerts", OrganizerController.createConcert);
+router.get("/concerts/:concertId/bio-review", OrganizerArtistController.getAwaitingReviewBios);
+router.patch("/concerts/:concertId/bio-review/:artistId", OrganizerArtistController.updateBioStatus);
 
-// router.patch("/concerts/:id", OrganizerController.updateConcert);
-// router.patch("/concerts/:id/cancel", OrganizerController.cancelConcert);
-// router.patch("/concerts/:id/publish", OrganizerController.publishConcert);
-// router.patch("/concerts/:id/restore", OrganizerController.restoreConcert);
+router.post("/concerts", OrganizerConcertController.createConcert);
+router.patch("/concerts/:concertId", OrganizerConcertController.updateConcert);
+router.patch("/concerts/:concertId/update-status", OrganizerConcertController.updateConcertStatus);
 
 export default router;

@@ -9,7 +9,7 @@ export const handleInAppNotification = async (job: any, notificationType: "ORDER
     const { userInfo, orderId, concertData, ticketTypes } = job.data as NotificationPayload;
 
     const title = "Your purchase was successful";
-    const message = `Your order for concert "${concertData.title}" at "${concertData.venue}" on "${concertData.event_date}" has been successfully processed. You have purchased the following tickets: ${ticketTypes.map((ticket) => `${ticket.quantity} x ${ticket.name}`).join(", ")}.`;
+    const message = `Your order for concert "${concertData.title}" at "${concertData.venue}" on "${concertData.eventDate}" has been successfully processed. You have purchased the following tickets: ${ticketTypes.map((ticket) => `${ticket.quantity} x ${ticket.name}`).join(", ")}.`;
 
     const notificationIdempotency =
       notificationType === "ORDER_CONFIRMATION" ? `order-confirm-${orderId}` : `reminder-24h-${orderId}`;

@@ -8,15 +8,15 @@ import type {
   TicketTypeCatalogItem,
 } from "../types/order.types.js";
 import { OrderRepository } from "../repository/order.repository.js";
-import { ConcertClient } from "../utils/concert.client.js";
+import { concertClient } from "../clients/concert.client.js";
 import { orderQueue } from "../queues/order.queue.js";
 import { redis } from "../clients/redis.client.js";
 import { reserveStockLua, releaseStockLua } from "../utils/stock.lua.js";
 import { PaymentRepository } from "../repository/payment.repository.js";
 import logger from "../utils/logger.js";
-import { userClient } from "../clients/user.client.js";
 import { OutboxRepository } from "../repository/outbox.repository.js";
 import dotenv from "dotenv";
+import { safeRedisHGetAll } from "../utils/redis.utils.js";
 dotenv.config();
 
 const CLEANUP_WINDOW_MINUTES = parseInt(process.env.CLEANUP_WINDOW_MINUTES || "15");
@@ -27,6 +27,7 @@ const RESERVATION_TTL_SECONDS = 15 * 60;
 // ---------------- Redis Keys ----------------
 const idempotencyKey = (key: string) => `order:idempotency:${key}`;
 const concertStockKey = (concertId: string) => `catalog:concert:${concertId}:stock`;
+const concertTicketsKey = (concertId: string) => `catalog:concert:${concertId}:tickets`;
 const userPurchasedKey = (userId: string, concertId: string, ticketTypeId: string) =>
   `order:user:${userId}:concert:${concertId}:ticket_type:${ticketTypeId}:purchased`;
 
@@ -52,19 +53,6 @@ const deleteIdempotencyRecord = async (key: string) => {
   await redis.del(idempotencyKey(key));
 };
 
-const ensureConcertCache = async (concertId: string) => {
-  const stockKey = concertStockKey(concertId);
-  const hashExists = await redis.exists(stockKey);
-
-  const tickets = await ConcertClient.getConcertTickets(concertId);
-
-  if (hashExists === 0) {
-    await ConcertClient.getConcertStock(concertId);
-  }
-
-  return tickets.ticketTypes;
-};
-
 const validateSingleConcert = (items: CreateOrderItemInput[]) => {
   const concertIds = new Set(items.map((item) => item.concertId));
 
@@ -75,18 +63,37 @@ const validateSingleConcert = (items: CreateOrderItemInput[]) => {
   return items[0]?.concertId;
 };
 
-const buildCatalogMap = (items: TicketTypeCatalogItem[]) => {
-  return new Map(items.map((item) => [item.id, item]));
+const ensureConcertCache = async (concertId: string) => {
+  const [stockHashExists, ticketsHashExists] = await Promise.all([
+    redis.exists(concertStockKey(concertId)),
+    redis.exists(concertTicketsKey(concertId)),
+  ]);
+
+  console.log(
+    `Checking cache for concertId: ${concertId}, stockHashExists: ${stockHashExists}, ticketsHashExists: ${ticketsHashExists}`,
+  );
+
+  await Promise.all([
+    stockHashExists === 0 ? concertClient.get(`concerts/${concertId}/stocks`) : null,
+    ticketsHashExists === 0 ? concertClient.get(`concerts/${concertId}/ticket-types`) : null,
+  ]);
 };
 
-/**
- * Reserves stock for the specified ticket items by executing a Lua script in Redis to ensure atomicity. It checks the availability of the requested ticket quantities and updates the stock accordingly. If the reservation is successful, it returns without error; otherwise, it throws an AppError indicating that the tickets are sold out or exceed purchase limits.
- * @param userId ID of the user making the reservation
- * @param concertId ID of the concert for which tickets are being reserved
- * @param items List of ticket items to reserve
- * @param catalogMap Map of ticket types for the concert
- * @throws AppError if the reservation fails due to sold-out tickets or exceeding purchase limits
- */
+const getCatalogMap = async (concertId: string) => {
+  const cached = await safeRedisHGetAll(concertTicketsKey(concertId));
+  if (!cached || Object.keys(cached).length === 0) {
+    throw new AppError("Ticket catalog not found", 404);
+  }
+
+  const map = new Map<string, TicketTypeCatalogItem>();
+  for (const [ticketTypeId, ticketType] of Object.entries(cached)) {
+    const parsed = JSON.parse(ticketType as string) as TicketTypeCatalogItem;
+    map.set(ticketTypeId, parsed);
+  }
+
+  return map;
+};
+
 const reserveStocks = async (
   userId: string,
   concertId: string,
@@ -130,14 +137,6 @@ export const OrderService = {
     await redis.eval(releaseStockLua, keys.length, ...keys, ...args);
   },
 
-  /**
-   * Creates a new order.
-   * @param userId user ID of the order creator
-   * @param incoming order creation request payload
-   * @param idempotencyKeyValue idempotency key for ensuring idempotent requests
-   * @returns A promise resolving to the created order response
-   * @throws AppError if the user is unauthorized, if the order is already being processed, if the concert ID is missing, if ticket types are not found, or if there is an error during order creation
-   */
   async createOrder(userId: string, incoming: CreateOrderInput, idempotencyKeyValue: string): Promise<OrderResponse> {
     if (!userId) {
       throw new AppError("Unauthorized", 401);
@@ -145,21 +144,12 @@ export const OrderService = {
 
     const requestItems = incoming.data;
     const concertId = validateSingleConcert(requestItems);
+
     if (!concertId) {
       throw new AppError("Concert ID is required", 400);
     }
 
-    // const userResponse = await userClient.get(`/users/${userId}`).catch((error) => {
-    //   throw new AppError(`Failed to fetch user data: ${error.message}`, 500);
-    // });
-
-    // const user = userResponse?.data?.data;
-
-    // if (!user) {
-    //   throw new AppError("User not found", 404);
-    // }
-
-    const [existingRecord, catalog] = await Promise.all([
+    const [existingRecord] = await Promise.all([
       getIdempotencyRecord(idempotencyKeyValue),
       ensureConcertCache(concertId),
     ]);
@@ -174,7 +164,7 @@ export const OrderService = {
 
     await setIdempotencyRecord(idempotencyKeyValue, { status: "PROCESSING" });
 
-    const catalogMap = buildCatalogMap(catalog);
+    const catalogMap = await getCatalogMap(concertId);
     const orderId = crypto.randomUUID();
 
     const totalPrice = requestItems.reduce((sum, item) => {
@@ -257,13 +247,6 @@ export const OrderService = {
     }
   },
 
-  /**
-   * Lists orders with pagination and optional filtering by status, concert ID, and user ID.
-   * @param param0 Object containing pagination parameters (page, limit) and optional filters (status, concertId, userId)
-   * @returns A promise resolving to an object containing the list of orders and pagination information
-   * @throws AppError if page or limit parameters are invalid
-   * @throws AppError if there is an error retrieving orders from the repository
-   */
   async getOrderUrl(orderId: string): Promise<{ paymentUrl: string; status: string }> {
     const result = await PaymentRepository.getOrderUrl(orderId);
 

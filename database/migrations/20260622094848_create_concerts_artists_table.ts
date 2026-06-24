@@ -7,7 +7,11 @@ export async function up(knex: Knex): Promise<void> {
 
     table.text("ai_bio");
     table.text("verified_bio");
-    table.string("bio_status").notNullable().defaultTo("PENDING").checkIn(["PENDING", "VERIFIED", "REJECTED"]);
+    table
+      .string("bio_status")
+      .notNullable()
+      .defaultTo("PENDING")
+      .checkIn(["PENDING", "AWAITING_REVIEW", "APPROVED", "REJECTED"]);
 
     table.primary(["concert_id", "artist_id"]);
     table.index(["concert_id", "artist_id"], "idx_concerts_artists_concert_id_artist_id");

@@ -10,6 +10,14 @@ export const organizerConcertProxy = createProxyMiddleware({
   target: SERVICES.CONCERT,
   changeOrigin: true,
   pathRewrite: {
-    "^/": "organizer/",
+    "^/": "organizer/concerts/",
+  },
+});
+
+export const organizerArtistProxy = createProxyMiddleware({
+  target: SERVICES.CONCERT,
+  changeOrigin: true,
+  pathRewrite: {
+    "^/": "organizer/artists/",
   },
 });

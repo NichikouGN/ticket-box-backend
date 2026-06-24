@@ -6,7 +6,6 @@ export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFu
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     console.log("No authorization header provided, continuing without authentication");
-    // If no authorization header is present, continue without authentication
     return next();
   }
 
@@ -18,7 +17,13 @@ export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFu
   }
 
   try {
-    req.user = verifyAccessToken(token);
+    const verifyResult = verifyAccessToken(token);
+    if (!verifyResult || verifyResult.role !== "ORGANIZER") {
+      console.log("Token verified successfully, but user is not an organizer:", req.user);
+      return next();
+    }
+
+    req.user = verifyResult;
     console.log("Token verified successfully, user authenticated:", req.user);
     return next();
   } catch {

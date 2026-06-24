@@ -13,6 +13,7 @@ import logger from "../utils/logger.js";
  */
 export const createOrder = async (req: Request, res: Response) => {
   try {
+    console.log("Received request to create order:", req.body);
     const parsedBody = createOrderSchema.safeParse(req.body);
 
     if (!parsedBody.success) {

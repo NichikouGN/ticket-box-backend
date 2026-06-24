@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const uuidParamSchema = z.object({
-  id: z.string().uuid(),
+export const concertIdParamSchema = z.object({
+  concertId: z.string().uuid(),
 });
 
 export const listQuerySchema = z.object({
@@ -10,22 +10,30 @@ export const listQuerySchema = z.object({
 });
 
 const ticketTypeSchema = z.object({
-  name: z.string().min(1),
-  price: z.coerce.number().int().nonnegative(),
-  maxPerUser: z.coerce.number().int().positive(),
-  totalCapacity: z.coerce.number().int().positive(),
-  saleStart: z.string().datetime(),
-  saleEnd: z.string().datetime(),
+  name: z.string("Name must be a non-empty string").min(1),
+  price: z.coerce.number("Price must be a valid number").int().nonnegative(),
+  maxPerUser: z.coerce.number("Max per user must be a valid number").int().positive(),
+  totalCapacity: z.coerce.number("Total capacity must be a valid number").int().positive(),
+  saleStart: z.string().datetime("Sale start must be a valid datetime"),
+  saleEnd: z.string().datetime("Sale end must be a valid datetime"),
 });
 
 export const createConcertSchema = z
   .object({
-    title: z.string().min(1),
-    description: z.string().optional().nullable(),
-    venue: z.string().min(1),
-    eventDate: z.string().datetime(),
-    thumbnailUrl: z.string().url().optional().nullable(),
-    seatMapSvgUrl: z.string().url().optional().nullable(),
+    title: z.string("Title must be a non-empty string").min(1),
+    description: z.string("Description must be a valid string").optional().nullable(),
+    venue: z.string("Venue must be a non-empty string").min(1),
+    eventDate: z.string("Event date must be a valid datetime").datetime(),
+    coverImage: z
+      .string("Cover image must be a valid URL")
+      .url("Cover image must be a valid URL")
+      .optional()
+      .nullable(),
+    seatMapSvg: z
+      .string("Seat map SVG must be a valid URL")
+      .url("Seat map SVG must be a valid URL")
+      .optional()
+      .nullable(),
     ticketTypes: z.array(ticketTypeSchema).min(1),
   })
   .strict();
@@ -34,13 +42,14 @@ export const updateConcertSchema = createConcertSchema.partial().extend({
   ticketTypes: z.array(ticketTypeSchema).optional(),
 });
 
-export const cancelConcertSchema = z.object({
-  reason: z.string().min(1).optional().nullable(),
+export const updateConcertStatusSchema = z.object({
+  status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED"]),
 });
 
 export type CreateConcertInput = z.infer<typeof createConcertSchema>;
 export type UpdateConcertInput = z.infer<typeof updateConcertSchema>;
 export type TicketTypeInput = z.infer<typeof ticketTypeSchema>;
+export type UpdateConcertStatusInput = z.infer<typeof updateConcertStatusSchema>;
 
 export type ConcertListItem = {
   id: string;
@@ -49,7 +58,7 @@ export type ConcertListItem = {
   venue: string;
   eventDate: string;
   status: string;
-  thumbnailUrl: string | null;
+  coverImage: string | null;
 };
 
 export type ConcertDetail = {
@@ -59,14 +68,16 @@ export type ConcertDetail = {
   artists: string[];
   venue: string;
   eventDate: string;
-  thumbnailUrl: string | null;
-  seatMapSvgUrl: string | null;
+  coverImage: string | null;
+  seatMapSvg: string | null;
 };
 
 export type TicketTypeView = {
   id: string;
   name: string;
   price: number;
+  totalQuantity: number;
+  soldQuantity: number;
   maxPerUser: number;
 };
 

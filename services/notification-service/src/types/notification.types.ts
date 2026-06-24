@@ -20,7 +20,7 @@ export type NotificationPayload = {
     id: string;
     title: string;
     venue: string;
-    event_date: string;
+    eventDate: string;
   };
   ticketTypes: {
     ticketTypeId: string;

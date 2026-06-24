@@ -9,7 +9,7 @@ export const handleSet24hReminder = async (job: any) => {
     // const title = "Reminder: Your concert is in 24 hours!";
     // const message = `This is a friendly reminder that your concert "${concertData.title}" at "${concertData.venue}" is happening on "${concertData.event_date}". You have purchased the following tickets: ${ticketTypes.map((ticket) => `${ticket.quantity} x ${ticket.name}`).join(", ")}. Please make sure to arrive on time and enjoy the show!`;
 
-    const eventTime = new Date(concertData.event_date).getTime();
+    const eventTime = new Date(concertData.eventDate).getTime();
     const scheduledTime = new Date(eventTime - 24 * 60 * 60 * 1000); // 24 hours before the event
 
     await NotificationRepository.setReminder(db, userInfo.id, scheduledTime, {

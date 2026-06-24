@@ -32,7 +32,8 @@ const parseCachedValue = <T>(value: string | null | undefined) => {
 
   try {
     return JSON.parse(value) as T;
-  } catch {
+  } catch (error) {
+    console.error("Error parsing cached value:", error);
     return null;
   }
 };
@@ -44,7 +45,7 @@ const toListItem = (row: Record<string, unknown>): ConcertListItem => ({
   venue: String(row.venue),
   eventDate: new Date(String(row.event_date)).toISOString(),
   status: String(row.status).toUpperCase(),
-  thumbnailUrl: row.cover_image ? String(row.cover_image) : null,
+  coverImage: row.cover_image ? String(row.cover_image) : null,
 });
 
 const toDetail = (row: Record<string, unknown>): ConcertDetail => ({
@@ -54,8 +55,8 @@ const toDetail = (row: Record<string, unknown>): ConcertDetail => ({
   artists: Array.isArray(row.artists) ? row.artists.map(String) : [],
   venue: String(row.venue),
   eventDate: new Date(String(row.event_date)).toISOString(),
-  thumbnailUrl: row.cover_image ? String(row.cover_image) : null,
-  seatMapSvgUrl: row.seat_map_svg_url ? String(row.seat_map_svg_url) : null,
+  coverImage: row.cover_image ? String(row.cover_image) : null,
+  seatMapSvg: row.seat_map_svg_url ? String(row.seat_map_svg_url) : null,
 });
 
 export const ConcertService = {
@@ -63,19 +64,9 @@ export const ConcertService = {
     return { redis: getRedisHealth() };
   },
 
-  /**
-   * Lists concerts with pagination and optional filtering by organizer
-   * @param page Page number for pagination
-   * @param limit Number of items per page
-   * @param organizerId Optional ID of the organizer to filter by
-   * @returns Promise resolving to the list of concerts and pagination information
-   * @throws AppError with status 500 for any unexpected errors during retrieval
-   * @throws AppError with status 400 for invalid pagination parameters
-   * @throws AppError with status 404 if no concerts are found for the given page and limit
-   */
   async listConcerts(page: number, limit: number, organizerId?: string) {
     const key = listKey(page, limit);
-    const useCache = !organizerId; // Only use cache for non-organizer requests
+    const useCache = !organizerId;
 
     if (useCache) {
       const cached = parseCachedValue<{
@@ -89,8 +80,8 @@ export const ConcertService = {
     }
 
     const offset = (page - 1) * limit;
-
     let [rows, totalItems] = [<Record<string, unknown>[]>[], 0];
+
     if (useCache) {
       [rows, totalItems] = await Promise.all([
         ConcertRepository.getPublishedConcerts(offset, limit),
@@ -119,14 +110,6 @@ export const ConcertService = {
     return payload;
   },
 
-  /**
-   * Retrieves the detail of a specific concert
-   * @param concertId ID of the concert to retrieve
-   * @param organizerId Optional ID of the organizer to filter by
-   * @returns Promise resolving to the concert detail or an error if not found or not published (for non-organizer requests)
-   * @throws AppError with status 404 if concert is not found or not published (for non-organizer requests)
-   * @throws AppError with status 500 for any unexpected errors during retrieval
-   */
   async getConcertDetail(concertId: string, organizerId?: string) {
     const key = detailKey(concertId);
 
@@ -157,67 +140,65 @@ export const ConcertService = {
     return payload;
   },
 
-  /**
-   * Retrieves the ticket details of a specific concert
-   * @param concertId ID of the concert to retrieve ticket details for
-   * @param organizerId Optional ID of the organizer to filter by
-   * @returns Promise resolving to the ticket details of the concert or an error if not found or not published (for non-organizer requests)
-   * @throws AppError with status 404 if ticket details are not found or concert is not published (for non-organizer requests)
-   * @throws AppError with status 500 for any unexpected errors during retrieval
-   */
-  async getConcertTicketsDetails(concertId: string, organizerId?: string) {
+  async getTicketTypes(concertId: string, organizerId?: string) {
     const key = ticketsKey(concertId);
+    const useCache = !organizerId;
 
-    const useCache = !organizerId; // Only use cache for non-organizer requests
+    console.log(
+      `Fetching ticket types for concertId: ${concertId}, organizerId: ${organizerId}, useCache: ${useCache}`,
+    );
+
     if (useCache) {
-      const cached = parseCachedValue<{
-        seatMapSvgUrl: string | null;
-        ticketTypes: TicketTypeView[];
-      }>((await safeRedisMGet([key]))?.[0]);
+      const cached = await safeRedisHGetAll(key);
 
-      if (cached) {
-        return cached;
+      if (cached && Object.keys(cached).length > 0) {
+        const result = Object.entries(cached).map(([_, ticketType]) =>
+          parseCachedValue<TicketTypeView>(ticketType as string),
+        );
+        return result;
       }
     }
 
-    const ticketsDetails = await ConcertRepository.getConcertTicketsDetails(concertId);
-    if (!ticketsDetails) {
+    const existingConcert = await ConcertRepository.findConcertById(concertId);
+    if (!existingConcert) {
+      throw new AppError("Concert not found", 404);
+    }
+
+    const ticketTypes = await ConcertRepository.getTicketTypes(concertId);
+    if (!ticketTypes) {
       throw new AppError("Tickets details not found", 404);
     }
 
-    if (useCache && String(ticketsDetails.concert.status) !== "PUBLISHED") {
+    if (useCache && String(existingConcert.status) !== "PUBLISHED") {
       throw new AppError("Tickets details not found", 404);
     }
 
-    const payload = {
-      seatMapSvgUrl: ticketsDetails.concert.seat_map_svg_url
-        ? String(ticketsDetails.concert.seat_map_svg_url)
-        : null,
-      ticketTypes: ticketsDetails.ticketTypes.map((ticketType) => ({
-        id: ticketType.id,
-        name: ticketType.name,
-        price: ticketType.price,
-        maxPerUser: ticketType.max_per_user,
-      })) satisfies TicketTypeView[],
-    };
+    const ticketMap: Record<string, string> = {};
 
-    if (useCache) {
-      await safeRedisSet(key, JSON.stringify(payload), TICKETS_CACHE_TTL_SECONDS);
+    ticketTypes.forEach((tt) => {
+      ticketMap[tt.id] = JSON.stringify({
+        id: tt.id,
+        name: tt.name,
+        price: tt.price,
+        maxPerUser: tt.maxPerUser,
+      });
+    });
+
+    if (Object.keys(ticketMap).length > 0 && useCache) {
+      await safeRedisHSet(key, ticketMap, TICKETS_CACHE_TTL_SECONDS);
     }
-    return payload;
+
+    return ticketTypes.map((tt) => ({
+      id: tt.id,
+      name: tt.name,
+      price: tt.price,
+      maxPerUser: tt.maxPerUser,
+    }));
   },
 
-  /**
-   * Retrieves the stock details of a specific concert
-   * @param concertId ID of the concert to retrieve stock details for
-   * @param organizerId Optional ID of the organizer to filter by
-   * @returns Promise resolving to the stock details of the concert or an error if not found or not published (for non-organizer requests)
-   * @throws AppError with status 404 if stock details are not found or concert is not published (for non-organizer requests)
-   * @throws AppError with status 500 for any unexpected errors during retrieval
-   */
-  async getConcertStock(concertId: string, organizerId?: string) {
+  async getStock(concertId: string, organizerId?: string) {
     const key = stockKey(concertId);
-    const useCache = !organizerId; // Only use cache for non-organizer requests
+    const useCache = !organizerId;
 
     if (useCache) {
       const cached = await safeRedisHGetAll(key);
@@ -228,27 +209,32 @@ export const ConcertService = {
           stock: Number(stock),
         }));
 
-        return { ticketTypes: result };
+        return result;
       }
     }
 
-    const ticketDetails = await ConcertRepository.getConcertTicketsDetails(concertId);
-    if (!ticketDetails) {
+    const existingConcert = await ConcertRepository.findConcertById(concertId);
+    if (!existingConcert) {
+      throw new AppError("Concert not found", 404);
+    }
+
+    const ticketTypes = await ConcertRepository.getTicketTypes(concertId);
+    if (!ticketTypes) {
       throw new AppError("Tickets details not found", 404);
     }
 
-    if (useCache && String(ticketDetails.concert.status) !== "PUBLISHED") {
+    if (useCache && String(existingConcert.status) !== "PUBLISHED") {
       throw new AppError("Tickets details not found", 404);
     }
 
     const stockMap: Record<string, number> = {};
 
-    const payload = ticketDetails.ticketTypes.map((ticketType) => {
-      const availableStock = Math.max(0, ticketType.total_quantity - ticketType.sold_quantity);
-      stockMap[ticketType.id] = availableStock;
+    const payload = ticketTypes.map((tt) => {
+      const availableStock = Math.max(0, tt.totalQuantity - tt.soldQuantity);
+      stockMap[tt.id] = availableStock;
 
       return {
-        id: ticketType.id,
+        id: tt.id,
         stock: availableStock,
       };
     });

@@ -5,14 +5,15 @@ export async function seed(knex: Knex): Promise<void> {
 
   await knex("concerts").insert([
     {
-      id: "8a1b2c3d-4e5f-4a6b-8c9d-000000000001",
-      organizer_id: "3f2d2f6a-6c2b-4b2f-9c5a-111111111111",
-      title: "Summer Beats 2026",
-      description: "A huge summer music festival in HCMC",
-      venue: "Saigon Exhibition Center",
+      id: "1c098bed-8686-4904-8b74-3df150ff035c",
+      organizer_id: "4af9187e-15dd-4160-aff4-874aec923194",
+      title: "Summer Lights Music Festival 2026",
+      description:
+        "An unforgettable night featuring live performances from top local and international artists, immersive stage visuals, food vendors, and exclusive fan experiences.",
+      venue: "Saigon Riverside Arena",
       event_date: "2026-08-20T18:00:00+07",
-      cover_image: "https://example.com/cover.jpg",
-      seat_map_svg_url: "https://example.com/seat-map.svg",
+      cover_image: "null",
+      seat_map_svg_url: "null",
       status: "PUBLISHED",
     },
   ]);

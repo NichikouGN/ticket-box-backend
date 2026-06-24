@@ -36,7 +36,7 @@ export const handleEmailNotification = async (job: any, notificationType: "ORDER
         id: string;
         title: string;
         venue: string;
-        event_date: string;
+        eventDate: string;
       };
       ticketTypes: {
         ticketTypeId: string;
@@ -45,6 +45,11 @@ export const handleEmailNotification = async (job: any, notificationType: "ORDER
         quantity: number;
       }[];
     };
+
+    logger.info(
+      { userInfo, orderId, concertData, ticketTypes },
+      `Preparing to send ${notificationType} email for order ${orderId}`,
+    );
 
     const emailContent =
       notificationType === "ORDER_CONFIRMATION"

@@ -39,27 +39,23 @@ export const handlePaymentSuccessJob = async (job: any) => {
       };
     };
 
-    const ticketTypes = (
-      await concertClient.post(`/concerts/${concertId}/ticket-types`, {
-        ticketTypeIds: items.map((item) => item.ticketTypeId),
-      })
-    ).data as {
+    const ticketTypes = (await concertClient.get(`/concerts/${concertId}/ticket-types`)).data as {
       success: boolean;
       data: {
-        ticketTypeId: string;
+        id: string;
         name: string;
         price: number;
       }[];
     };
 
-    const quantityMap = new Map<string, number>(
-      items.map((item) => [item.ticketTypeId, item.quantity]),
-    );
+    const quantityMap = new Map<string, number>(items.map((item) => [item.ticketTypeId, item.quantity]));
 
     const enrichedTicketTypes = ticketTypes.data.map((tt) => {
-      const quantity = quantityMap.get(tt.ticketTypeId) || 0;
+      const quantity = quantityMap.get(tt.id) || 0;
       return {
-        ...tt,
+        ticketTypeId: tt.id,
+        name: tt.name,
+        price: tt.price,
         quantity,
       };
     });
@@ -88,7 +84,7 @@ export const handlePaymentSuccessJob = async (job: any) => {
     );
     await redisPublisher.quit();
   } catch (error) {
-    console.log("Error in handlePaymentSuccessJob:", error);
+    // console.log("Error in handlePaymentSuccessJob:", error);
     throw error;
   }
 };

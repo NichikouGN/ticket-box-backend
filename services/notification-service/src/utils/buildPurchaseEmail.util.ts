@@ -25,7 +25,7 @@ function formatEventDate(dateString: string) {
 export function buildPurchaseEmail(data: NotificationPayload) {
   const subject = "Your purchase was successful";
 
-  const eventDate = formatEventDate(data.concertData.event_date);
+  const eventDate = formatEventDate(data.concertData.eventDate);
 
   const ticketsHtml =
     data.ticketTypes.length > 0

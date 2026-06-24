@@ -3,7 +3,6 @@ import { z } from "zod";
 export const uuidSchema = z.string().uuid();
 
 const paymentMethod = ["stripe"];
-export const paymentMethodSchema = z.enum(paymentMethod);
 
 export const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -14,14 +13,14 @@ export const listOrdersQuerySchema = z.object({
 });
 
 export const createOrderItemSchema = z.object({
-  concertId: z.string().uuid(),
-  ticketTypeId: z.string().uuid(),
-  quantity: z.coerce.number().int().positive(),
+  concertId: z.string("concertId is required").uuid(),
+  ticketTypeId: z.string("ticketTypeId is required").uuid(),
+  quantity: z.coerce.number("quantity is required").int().positive(),
 });
 
 export const createOrderSchema = z.object({
-  paymentMethod: paymentMethodSchema,
-  data: z.array(createOrderItemSchema).min(1),
+  paymentMethod: z.enum(paymentMethod, "Invalid payment method"),
+  data: z.array(createOrderItemSchema, "Data is required").min(1),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
