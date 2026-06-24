@@ -2,20 +2,6 @@ import { UserRepository } from "../repository/user.repository.js";
 import { AppError } from "../types/appError.types.js";
 
 export const UserService = {
-  async getUserById(userId: string) {
-    if (!userId) {
-      throw new AppError("User ID is required", 400);
-    }
-
-    const user = await UserRepository.getUserProfile(userId);
-
-    if (!user || user.status !== "ACTIVE") {
-      throw new AppError("User not found", 404);
-    }
-
-    return user;
-  },
-
   /**
    * Retrieves the profile of a user
    * @param userId Id of the user whose profile is to be retrieved
@@ -27,7 +13,7 @@ export const UserService = {
       throw new AppError("User ID is required", 400);
     }
 
-    const userProfile = await UserRepository.getUserProfile(userId);
+    const userProfile = await UserRepository.getUserById(userId);
 
     if (!userProfile) {
       throw new AppError("User not found", 404);

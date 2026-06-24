@@ -11,14 +11,18 @@ export const getHealth = async (_req: Request, res: Response) => {
 export const ConcertController = {
   async getConcerts(req: Request, res: Response) {
     try {
-      const parsed = listQuerySchema.safeParse(req.query);
-      if (!parsed.success) {
-        return res.status(400).json({ success: false, message: parsed.error.issues[0]?.message ?? "Invalid query" });
+      const parsedQuery = listQuerySchema.safeParse(req.query);
+      if (!parsedQuery.success) {
+        return res
+          .status(400)
+          .json({ success: false, message: parsedQuery.error.issues[0]?.message ?? "Invalid query" });
       }
 
       const organizerId = req.user?.userId;
+      const page = parsedQuery.data.page;
+      const limit = parsedQuery.data.limit;
 
-      const result = await ConcertService.listConcerts(parsed.data.page, parsed.data.limit, organizerId);
+      const result = await ConcertService.listConcerts(page, limit, organizerId);
       return res.status(200).json({
         success: true,
         data: result.data,

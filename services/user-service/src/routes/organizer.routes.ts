@@ -1,9 +1,5 @@
 import { Router } from "express";
-import {
-  getAllUsers,
-  updateUserRole,
-  updateUserStatus,
-} from "../controller/organizer.controller.js";
+import { OrganizerController } from "../controller/organizer.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { rbacMiddleware } from "../middleware/rbac.middleware.js";
 const router = Router();
@@ -11,9 +7,9 @@ const router = Router();
 router.use(authMiddleware);
 router.use(rbacMiddleware("ORGANIZER"));
 
-router.get("/", getAllUsers);
-router.patch("/:targetId/role", updateUserRole);
-router.patch("/:targetId/status", updateUserStatus);
+router.get("/", OrganizerController.getAllUsers);
+router.patch("/:targetId/role", OrganizerController.updateUserRole);
+router.patch("/:targetId/status", OrganizerController.updateUserStatus);
 
 router.use((req, res) => {
   console.log("Auth Routes: Unhandled request:", req.method, req.originalUrl);

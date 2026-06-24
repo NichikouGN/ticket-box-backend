@@ -3,7 +3,7 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/
 import { comparePassword, hashPassword } from "../utils/password.util.js";
 import { UserRepository } from "../repository/user.repository.js";
 import crypto from "crypto";
-import type { SignInInput, SignUpInput, RefreshTokenInput } from "../types/user.types.js";
+import type { SignInInput, SignUpInput, RefreshTokenInput } from "../types/auth.types.js";
 
 export const AuthService = {
   /**
@@ -13,16 +13,15 @@ export const AuthService = {
    * @throws AppError if email is already registered or if any other error occurs
    */
   async signup({ email, password, fullName }: SignUpInput) {
-    const existingUser = await UserRepository.findByEmail(email);
+    const existingUser = await UserRepository.getUserByEmail(email);
+
     if (existingUser) {
       throw new AppError("Email already registered", 409);
     }
 
-    // Hash password
     const passwordHash = await hashPassword(password);
     const userId = crypto.randomUUID();
 
-    // Create user
     await UserRepository.createNewUser({
       id: userId,
       email,
@@ -40,18 +39,17 @@ export const AuthService = {
    * @throws AppError if email or password is invalid
    */
   async signin({ email, password }: SignInInput) {
-    const user = await UserRepository.findByEmail(email);
+    const user = await UserRepository.getUserPassword(email);
 
     if (!user) {
       throw new AppError("Invalid email or password", 401);
     }
 
-    const isPasswordValid = await comparePassword(password, user.password_hash);
+    const isPasswordValid = await comparePassword(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new AppError("Invalid email or password", 401);
     }
 
-    // Generate tokens
     const accessToken = signAccessToken({ userId: user.id, role: user.role });
     const refreshToken = signRefreshToken({ userId: user.id, role: user.role });
 
@@ -72,7 +70,6 @@ export const AuthService = {
     }
 
     const newAccessToken = signAccessToken({ userId: payload.userId, role: payload.role });
-
     return { accessToken: newAccessToken };
   },
 };

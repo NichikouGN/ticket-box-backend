@@ -33,16 +33,19 @@ export const OrganizerArtistService = {
 
   async linkArtistsToConcert(concertId: string, artistIds: string[]) {
     try {
-      const artists = await ArtistRepository.findArtistByIds(artistIds);
+      const [concertExists, artists] = await Promise.all([
+        ConcertRepository.findConcertById(concertId),
+        ArtistRepository.findArtistByIds(artistIds),
+      ]);
+
+      if (!concertExists) {
+        throw new AppError(`Concert with ID ${concertId} does not exist`, 404);
+      }
+
       if (artists.length !== artistIds.length) {
         const foundArtistIds = artists.map((artist) => artist.id);
         const missingArtistIds = artistIds.filter((id) => !foundArtistIds.includes(id));
         throw new AppError(`The following artist IDs do not exist: ${missingArtistIds.join(", ")}`, 404);
-      }
-
-      const concertExists = await ConcertRepository.findConcertById(concertId);
-      if (!concertExists) {
-        throw new AppError(`Concert with ID ${concertId} does not exist`, 404);
       }
 
       await ArtistRepository.linkArtistsToConcert(concertId, artistIds);
@@ -96,6 +99,11 @@ export const OrganizerArtistService = {
 
   async getAwaitingReviewBios(concertId: string) {
     try {
+      const concertExists = await ConcertRepository.findConcertById(concertId);
+      if (!concertExists) {
+        throw new AppError(`Concert with ID ${concertId} does not exist`, 404);
+      }
+
       const awaitingReviewBios = await ArtistRepository.getAwaitingReviewBios(concertId);
       return awaitingReviewBios;
     } catch (error) {
@@ -124,6 +132,10 @@ export const OrganizerArtistService = {
       }
 
       await ArtistRepository.updateArtistBioStatus(concertId, artistId, status);
+
+      if (status === "APPROVED") {
+        await ArtistRepository.updateArtistApprovedBio(concertId, artistId);
+      }
     } catch (error) {
       throw error;
     }

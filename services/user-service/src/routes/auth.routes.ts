@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { signup, signin, requestNewAccessToken } from "../controller/auth.controller.js";
+import { AuthController } from "../controller/auth.controller.js";
 const router = Router();
 
-router.post("/sign-up", signup);
-router.post("/sign-in", signin);
-router.post("/refresh-token", requestNewAccessToken);
+router.post("/sign-up", AuthController.signup);
+router.post("/sign-in", AuthController.signin);
+router.post("/refresh-token", AuthController.requestNewAccessToken);
 
 router.use((req, res) => {
   console.log("Auth Routes: Unhandled request:", req.method, req.originalUrl);

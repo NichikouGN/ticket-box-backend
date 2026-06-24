@@ -56,6 +56,13 @@ export const ArtistRepository = {
     await Promise.all(updatePromises);
   },
 
+  async updateArtistApprovedBio(concertId: string, artistId: string) {
+    await db("concerts_artists")
+      .where("concert_id", concertId)
+      .andWhere("artist_id", artistId)
+      .update({ verified_bio: db.raw("ai_bio") });
+  },
+
   async getAwaitingReviewBios(concertId: string): Promise<{ artistId: string; artistName: string; aiBio: string }[]> {
     const results = await db("concerts_artists as ca")
       .join("artists as a", "ca.artist_id", "a.id")

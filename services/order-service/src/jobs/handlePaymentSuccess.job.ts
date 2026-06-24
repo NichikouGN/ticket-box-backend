@@ -23,7 +23,7 @@ export const handlePaymentSuccessJob = async (job: any) => {
       data: {
         id: string;
         email: string;
-        full_name: string;
+        fullName: string;
         role: string;
         status: string;
       };
@@ -35,7 +35,7 @@ export const handlePaymentSuccessJob = async (job: any) => {
         id: string;
         title: string;
         venue: string;
-        event_date: string;
+        eventDate: string;
       };
     };
 
@@ -50,15 +50,16 @@ export const handlePaymentSuccessJob = async (job: any) => {
 
     const quantityMap = new Map<string, number>(items.map((item) => [item.ticketTypeId, item.quantity]));
 
-    const enrichedTicketTypes = ticketTypes.data.map((tt) => {
-      const quantity = quantityMap.get(tt.id) || 0;
-      return {
-        ticketTypeId: tt.id,
-        name: tt.name,
-        price: tt.price,
-        quantity,
-      };
-    });
+    const enrichedTicketTypes = ticketTypes.data
+      .filter((tt) => (quantityMap.get(tt.id) || 0) > 0)
+      .map((tt) => {
+        return {
+          ticketTypeId: tt.id,
+          name: tt.name,
+          price: tt.price,
+          quantity: quantityMap.get(tt.id),
+        };
+      });
 
     db.transaction(async (trx) => {
       await OrderRepository.updateOrderStatus(trx, orderId, "COMPLETED");

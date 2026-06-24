@@ -25,12 +25,7 @@ export const OrderRepository = {
   > {
     const result = await db("orders")
       .join("order_items", "order_items.order_id", "orders.id")
-      .select(
-        "orders.user_id",
-        "order_items.concert_id",
-        "order_items.ticket_type_id",
-        "order_items.quantity",
-      )
+      .select("orders.user_id", "order_items.concert_id", "order_items.ticket_type_id", "order_items.quantity")
       .where("orders.id", orderId);
 
     return result.map((row) => ({
@@ -76,16 +71,16 @@ export const OrderRepository = {
   },
 
   async createOrderItems(trx: Knex.Transaction, orderId: string, items: OrderItemInput[]) {
-    await trx("order_items").insert(
-      items.map((item) => ({
-        order_id: orderId,
-        concert_id: item.concertId,
-        ticket_type_id: item.ticketTypeId,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        line_total: item.unitPrice * item.quantity,
-      })),
-    );
+    const orderItems = items.map((item) => ({
+      order_id: orderId,
+      concert_id: item.concertId,
+      ticket_type_id: item.ticketTypeId,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      line_total: item.unitPrice * item.quantity,
+    }));
+
+    await trx("order_items").insert(orderItems);
   },
 
   async updateOrderStatus(db: DB, orderId: string, status: OrderStatus) {

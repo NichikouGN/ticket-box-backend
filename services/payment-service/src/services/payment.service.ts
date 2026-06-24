@@ -10,18 +10,9 @@ import { StripeService } from "./stripe.service.js";
 
 const PAYMENT_WINDOW_MINUTES = parseInt(process.env.PAYMENT_WINDOW_MINUTES || "15", 10);
 
-const toPaymentDeadline = () =>
-  new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000).toISOString();
+const toPaymentDeadline = () => new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 60 * 1000).toISOString();
 export const PaymentService = {
-  /**
-   * Creates a payment record and initiates the payment process for the given input. If a payment with the same idempotency key already exists, it returns the existing payment information. Otherwise, it creates a new payment record, generates a checkout session, and returns the payment details including the checkout URL and payment deadline.
-   * @param input  - The input data required to create a payment, including order ID, user ID, amount, payment method, and idempotency key.
-   * @returns A promise resolving to the payment details including the checkout URL and payment deadline.
-   * @throws AppError if there is an error during payment creation or processing.
-   */
-  async createPayment(
-    input: CreateOrderInput,
-  ): Promise<{ paymentUrl: string; paymentDeadline: string }> {
+  async createPayment(input: CreateOrderInput): Promise<{ paymentUrl: string; paymentDeadline: string }> {
     const paymentId = crypto.randomUUID();
     try {
       const existing = await PaymentRepository.findByOrderId(input.orderId);
@@ -72,10 +63,7 @@ export const PaymentService = {
         paymentDeadline: deadline,
       };
     } catch (error) {
-      logger.error(
-        { paymentId, error: error },
-        "[Service - createPayment] Error during payment processing:",
-      );
+      logger.error({ paymentId, error: error }, "[Service - createPayment] Error during payment processing:");
 
       if (error instanceof AppError) {
         throw error;
@@ -84,12 +72,6 @@ export const PaymentService = {
     }
   },
 
-  /**
-   * Marks a payment as failed for a given order ID. If the payment is not found, it throws an AppError with a 404 status code. Otherwise, it updates the payment status to "failed", emits failure jobs for order and notification processing, and returns the updated payment details.
-   * @param orderId order ID to mark as failed
-   * @returns A promise resolving to the updated payment details after marking as failed
-   * @throws AppError if the payment is not found or if there is an error during the update process
-   */
   async markFailed(orderId: string) {
     const payment = await PaymentRepository.findByOrderId(orderId);
     if (!payment) {
@@ -99,5 +81,18 @@ export const PaymentService = {
 
     await PaymentRepository.updatePaymentStatus(db, payment.id, "FAILED");
     return await PaymentRepository.findById(payment.id);
+  },
+
+  async getPaymentUrl(orderId: string): Promise<{ paymentUrl: string; status: string }> {
+    const payment = await PaymentRepository.findByOrderId(orderId);
+    if (!payment) {
+      logger.warn({ orderId }, "[Service - getPaymentUrl] Payment not found for order:", orderId);
+      throw new AppError("Payment not found for the given order", 404);
+    }
+
+    return {
+      paymentUrl: payment.payment_url || "",
+      status: payment.status,
+    };
   },
 };

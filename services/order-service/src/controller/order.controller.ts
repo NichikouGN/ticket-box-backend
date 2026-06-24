@@ -2,8 +2,8 @@ import type { Request, Response } from "express";
 import { AppError } from "../types/appError.types.js";
 import { createOrderSchema, listOrdersQuerySchema, uuidSchema } from "../types/order.types.js";
 import { OrderService } from "../services/order.service.js";
-import { Redis } from "ioredis";
 import logger from "../utils/logger.js";
+import { activeSSEConnections } from "../index.js";
 
 /**
  * Creates a new order.
@@ -57,7 +57,6 @@ export const createOrder = async (req: Request, res: Response) => {
  * If the order is already in a final state (PENDING_PAYMENT, COMPLETED, FAILED, EXPIRED), it sends the current status immediately and ends the stream.
  * Otherwise, it keeps the connection open and listens for updates on the order status, sending updates to the client as they occur. The connection will be closed after 2 minutes or when the client disconnects.
  */
-import { activeSSEConnections } from "../index.js";
 export const streamOrderUrl = async (req: Request, res: Response) => {
   const params = uuidSchema.safeParse(req.params.orderId);
   if (!params.success) {
@@ -67,7 +66,7 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
 
   let currentStatus;
   try {
-    currentStatus = await OrderService.getOrderUrl(orderId);
+    currentStatus = await OrderService.getPaymentUrl(orderId);
     logger.info(currentStatus, `[SSE] Current status for order ID ${orderId}:`);
   } catch (error) {
     if (error instanceof AppError) {

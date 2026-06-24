@@ -1,6 +1,6 @@
 import { AppError } from "../types/appError.types.js";
 import { ConcertRepository } from "../repository/concert.repository.js";
-import { getRedisHealth } from "../infrastructure/redis.client.js";
+import { getRedisHealth } from "../clients/redis.client.js";
 import type {
   ConcertDetail,
   ConcertListItem,

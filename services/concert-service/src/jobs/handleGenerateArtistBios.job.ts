@@ -3,6 +3,7 @@ import dontenv from "dotenv";
 import { AIResponseSchema } from "../types/artist.types.js";
 import { ConcertRepository } from "../repository/concert.repository.js";
 import { UnrecoverableError } from "bullmq";
+import { ArtistRepository } from "../repository/artist.repository.js";
 dontenv.config();
 
 const ai = new GoogleGenAI({
@@ -48,7 +49,7 @@ export const handleGenerateArtistBios = async (data: {
   try {
     const { concertId, artistIds, pdfBase64String, mimeType } = data;
 
-    const artists = await ConcertRepository.findArtistForBioGeneration(artistIds, concertId);
+    const artists = await ArtistRepository.findArtistForBioGeneration(artistIds, concertId);
 
     if (!artists || artists.length !== artistIds.length) {
       const foundArtistIds = new Set(artists.map((artist) => artist.id));
@@ -95,7 +96,7 @@ export const handleGenerateArtistBios = async (data: {
     }
 
     const { matchedArtists } = validateData.data;
-    await ConcertRepository.updateArtistAIBios(concertId, matchedArtists);
+    await ArtistRepository.updateArtistAIBios(concertId, matchedArtists);
     console.log("Matched Artists from AI Response:", matchedArtists);
   } catch (error) {
     console.error("Error in handleGenerateArtistBios:", error);

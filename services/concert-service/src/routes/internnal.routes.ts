@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { internalAuthMiddleware } from "../middleware/internalAuth.middleware.js";
-import { internalController } from "../controller/internal.controller.js";
 import { ConcertController } from "../controller/concert.controller.js";
 
 const router = Router();

@@ -38,7 +38,6 @@ export type OrderListItem = {
 };
 
 export type OrderResponse = {
-  status: OrderStatus;
   orderId: string;
   totalPrice: number;
   paymentDeadline: string;

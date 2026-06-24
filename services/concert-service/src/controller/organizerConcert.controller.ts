@@ -29,7 +29,7 @@ export const OrganizerConcertController = {
         success: true,
         message:
           "Concert created successfully. Concert is in DRAFT status and can only be seen by organizers. Please review other information before publishing.",
-        data: result,
+        data: { concertId: result },
       });
     } catch (error) {
       if (error instanceof AppError) {

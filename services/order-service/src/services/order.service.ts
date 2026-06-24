@@ -12,11 +12,11 @@ import { concertClient } from "../clients/concert.client.js";
 import { orderQueue } from "../queues/order.queue.js";
 import { redis } from "../clients/redis.client.js";
 import { reserveStockLua, releaseStockLua } from "../utils/stock.lua.js";
-import { PaymentRepository } from "../repository/payment.repository.js";
-import logger from "../utils/logger.js";
 import { OutboxRepository } from "../repository/outbox.repository.js";
+import { safeRedisHGetAll, safeRedisGet, safeRedisSet, safeRedisDel } from "../utils/redis.utils.js";
+import logger from "../utils/logger.js";
 import dotenv from "dotenv";
-import { safeRedisHGetAll } from "../utils/redis.utils.js";
+import { paymentClient } from "../clients/payment.client.js";
 dotenv.config();
 
 const CLEANUP_WINDOW_MINUTES = parseInt(process.env.CLEANUP_WINDOW_MINUTES || "15");
@@ -36,7 +36,7 @@ const toPaymentDeadline = () => new Date(Date.now() + PAYMENT_WINDOW_MINUTES * 6
 
 const getIdempotencyRecord = async (key: string) => {
   try {
-    const payload = await redis.get(idempotencyKey(key));
+    const payload = await safeRedisGet(idempotencyKey(key));
     return payload ? (JSON.parse(payload) as { status: string; response?: OrderResponse }) : null;
   } catch {
     return null;
@@ -44,13 +44,12 @@ const getIdempotencyRecord = async (key: string) => {
 };
 
 const setIdempotencyRecord = async (key: string, payload: unknown) => {
-  logger.info({ idempotencyKey: key, payload }, "Setting idempotency record in Redis");
-  await redis.set(idempotencyKey(key), JSON.stringify(payload), "EX", IDEMPOTENCY_TTL_SECONDS);
+  await safeRedisSet(idempotencyKey(key), JSON.stringify(payload), IDEMPOTENCY_TTL_SECONDS);
 };
 
 const deleteIdempotencyRecord = async (key: string) => {
   logger.info({ idempotencyKey: key }, "Deleting idempotency record from Redis");
-  await redis.del(idempotencyKey(key));
+  await safeRedisDel([idempotencyKey(key)]);
 };
 
 const validateSingleConcert = (items: CreateOrderItemInput[]) => {
@@ -149,9 +148,9 @@ export const OrderService = {
       throw new AppError("Concert ID is required", 400);
     }
 
-    const [existingRecord] = await Promise.all([
-      getIdempotencyRecord(idempotencyKeyValue),
-      ensureConcertCache(concertId),
+    const [existingRecord, _] = await Promise.all([
+      getIdempotencyRecord(idempotencyKeyValue), //Check for existing idem record
+      ensureConcertCache(concertId), // Ensure redis cache is available
     ]);
 
     if (existingRecord?.status === "PROCESSING") {
@@ -162,10 +161,9 @@ export const OrderService = {
       return existingRecord.response;
     }
 
-    await setIdempotencyRecord(idempotencyKeyValue, { status: "PROCESSING" });
+    await setIdempotencyRecord(idempotencyKeyValue, { status: "PROCESSING", response: null });
 
-    const catalogMap = await getCatalogMap(concertId);
-    const orderId = crypto.randomUUID();
+    const catalogMap = await getCatalogMap(concertId); //Map of ticketType
 
     const totalPrice = requestItems.reduce((sum, item) => {
       const catalogItem = catalogMap.get(item.ticketTypeId);
@@ -177,10 +175,7 @@ export const OrderService = {
 
     await reserveStocks(userId, concertId, requestItems, catalogMap);
 
-    logger.info(
-      { userId, idempotencyKey: idempotencyKeyValue, orderId },
-      "[SERVICE] Stocks reserved successfully for order:",
-    );
+    const orderId = crypto.randomUUID();
     try {
       await db.transaction(async (trx) => {
         await OrderRepository.createOrder(trx, {
@@ -202,6 +197,7 @@ export const OrderService = {
           })),
         );
 
+        //Push event to payment service via outbox pattern
         await OutboxRepository.createOrderOutboxEvent(trx, "CREATE_PAYMENT", {
           orderId,
           userId,
@@ -221,7 +217,6 @@ export const OrderService = {
       );
 
       const response: OrderResponse = {
-        status: "PROCESSING",
         orderId: orderId,
         totalPrice: totalPrice,
         paymentDeadline: toPaymentDeadline(),
@@ -237,8 +232,6 @@ export const OrderService = {
       return response;
     } catch (error) {
       console.log(error);
-      logger.error({ orderId: orderId, error }, "Error creating order:");
-
       await OrderRepository.updateOrderStatus(db, orderId, "FAILED");
       await this.rollbackStocks(orderId);
       await deleteIdempotencyRecord(idempotencyKeyValue);
@@ -247,31 +240,26 @@ export const OrderService = {
     }
   },
 
-  async getOrderUrl(orderId: string): Promise<{ paymentUrl: string; status: string }> {
-    const result = await PaymentRepository.getOrderUrl(orderId);
+  //For SSE
+  async getPaymentUrl(orderId: string): Promise<{ paymentUrl: string; status: string }> {
+    try {
+      const response = (await paymentClient.get(`/payments/${orderId}/url`)).data as {
+        success: boolean;
+        data: {
+          paymentUrl: string;
+          status: string;
+        };
+      };
 
-    if (!result) {
-      throw new AppError("Order not found", 404);
+      const data = response.data;
+
+      return {
+        paymentUrl: data.paymentUrl,
+        status: data.status,
+      };
+    } catch (error) {
+      console.error("Error fetching payment URL:", error);
+      throw new AppError("Failed to fetch payment URL", 500);
     }
-
-    return result;
-  },
-
-  async markOrderAsFailed(orderId: string): Promise<void> {
-    await db.transaction(async (trx) => {
-      await OrderRepository.updateOrderStatus(trx, orderId, "FAILED");
-    });
-  },
-
-  async publishOrderUpdate(orderId: string, status: string): Promise<void> {
-    const redisPublisher = redis.duplicate();
-    await redisPublisher.publish(
-      "order_updates",
-      JSON.stringify({
-        orderId,
-        status,
-      }),
-    );
-    await redisPublisher.quit();
   },
 };

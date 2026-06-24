@@ -5,7 +5,6 @@ import { getRedisHealth } from "./clients/redis.client.js";
 import { Redis } from "ioredis";
 import type { Response } from "express";
 import { createOrderWorker } from "./workers/order.worker.js";
-import internalRoutes from "./routes/internal.routes.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 3004);
@@ -24,7 +23,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.use("/internal", internalRoutes);
 app.use("/", orderRoutes);
 
 app.use((req, res) => {

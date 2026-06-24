@@ -23,6 +23,7 @@ function formatEventDate(dateString: string) {
 }
 
 export function buildPurchaseEmail(data: NotificationPayload) {
+  console.log("Building purchase email with data:", data);
   const subject = "Your purchase was successful";
 
   const eventDate = formatEventDate(data.concertData.eventDate);
@@ -59,7 +60,7 @@ export function buildPurchaseEmail(data: NotificationPayload) {
           </h1>
 
           <p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
-            Dear ${escapeHtml(data.userInfo.full_name)}, your order has been successfully processed. Below are the details of your purchase:  
+            Dear ${escapeHtml(data.userInfo.fullName)}, your order has been successfully processed. Below are the details of your purchase:  
           </p>
 
           <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:24px;">

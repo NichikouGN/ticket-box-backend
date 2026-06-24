@@ -59,7 +59,7 @@ export function buildReminderEmail(data: NotificationPayload) {
           </h1>
 
           <p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
-            Dear ${escapeHtml(data.userInfo.full_name)}, this is a reminder about your upcoming event. Below are the details of your purchase and the event:  
+            Dear ${escapeHtml(data.userInfo.fullName)}, this is a reminder about your upcoming event. Below are the details of your purchase and the event:  
           </p>
 
           <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:24px;">

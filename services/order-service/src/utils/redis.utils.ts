@@ -7,6 +7,15 @@ export const ticketLimitationKey = (concertId: string, ticketTypeId: string) =>
   `catalog:concert:${concertId}:ticket_limitation:${ticketTypeId}`;
 export const stockKey = (concertId: string) => `catalog:concert:${concertId}:stock`;
 
+export const safeRedisGet = async (key: string) => {
+  try {
+    return await redis.get(key);
+  } catch (error) {
+    console.warn("Redis connection lost. Falling back to DB", error);
+    return null;
+  }
+};
+
 export const safeRedisMGet = async (keys: string[]) => {
   try {
     return await redis.mget(...keys);

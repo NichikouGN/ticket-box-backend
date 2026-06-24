@@ -43,7 +43,7 @@ export const OrganizerConcertService = {
         safeRedisDel([detailKey(concertId), ticketsKey(concertId)]),
       ]);
 
-      return { concert_id: concertId };
+      return concertId;
     } catch (error) {
       console.error("Error creating concert:", error);
       if (error instanceof AppError) {

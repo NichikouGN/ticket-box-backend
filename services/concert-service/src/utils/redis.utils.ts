@@ -1,4 +1,4 @@
-import { redis } from "../infrastructure/redis.client.js";
+import { redis } from "../clients/redis.client.js";
 
 export const listKey = (page: number, limit: number) => `catalog:concerts:page:${page}:limit:${limit}`;
 export const detailKey = (concertId: string) => `catalog:concert:${concertId}`;
