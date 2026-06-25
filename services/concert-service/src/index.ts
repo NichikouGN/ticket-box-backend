@@ -23,9 +23,9 @@ const healthHandler = (req: express.Request, res: express.Response) => {
 app.get("/health", healthHandler);
 app.get("/api/v1/health", healthHandler);
 
+app.use("/", concertRoutes);
 app.use("/internal", internalRoutes);
 app.use("/organizer", organizerRoutes);
-app.use("/", concertRoutes);
 
 app.use((req, res) => {
   console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);

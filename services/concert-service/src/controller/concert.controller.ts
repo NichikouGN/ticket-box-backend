@@ -26,6 +26,7 @@ export const ConcertController = {
       return res.status(200).json({
         success: true,
         data: result.data,
+        meta: result.total,
       });
     } catch (error) {
       console.error("Error in getConcerts:", error);

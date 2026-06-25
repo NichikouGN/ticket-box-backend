@@ -9,7 +9,7 @@ const router = Router();
 router.use(authMiddleware);
 router.use(rbacMiddleware(["STAFF", "ORGANIZER"]));
 
-router.get("/publicKey", TicketController.getPublicKey);
+router.get("/public-key", TicketController.getPublicKey);
 router.post("/verify", CheckinController.verifyTicket);
 router.get("/stats/:concertId", CheckinController.getCheckinStats);
 

@@ -32,6 +32,56 @@ npm run dev
 
 ## 4. Version
 
+### v0.6.0: Artist & AI Bio Generation (2026-06-25)
+
+#### New additions
+
+- Added an artists table to store artist information.
+
+```sql
+  CREATE TABLE artists (
+      id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name                VARCHAR(255) NOT NULL,
+  );
+```
+
+- Added a concerts_artist table to join concerts and artists. The artist ai_bio, verified_bio and bio_status are included.
+
+```sql
+  CREATE TABLE concerts_artist (
+      concert_id          UUID NOT NULL REFERENCES concerts(id) ON DELETE CASCADE,
+      artist_id           UUID NOT NULL REFERENCES artists(id) ON DELETE CASCADE,
+      ai_bio              TEXT,
+      verified_bio        TEXT,
+      bio_status          VARCHAR(255) NOT NULL DEFAULT 'PENDING' CHECK (bio_status IN ('PENDING', 'AWAITING_REVIEW', 'APPROVED','REJECTED')),
+      created_at          TIMESTAMPTZ DEFAULT now(),
+  );
+```
+
+- Added a create artist api that accept an array of artists' name.
+- Added link artist api that accept an array of artist_id to link to a concert.
+- Added api to generate ai_bio, get a list of ai_bio waiting to review and approve or reject the ai_bio.
+- Added concert outbox table to store and relay events related to artist bio generation.
+- Added a worker and job to handle the ai_bio generation asynchronously using Gemini AI API.
+
+#### Changes
+
+- Concert table no longer has artist_id, instead it will be linked to artists through concerts_artist table.
+- Changed existing update concert api to take into account the new concerts table changes
+- Changed get notifications and get concerts to return meta including the page, limit and total items.
+- Changed ensureConcertCache in Order Service to no longer return ticketTypes, instead it will set a redis key
+- Changed the function that build catalogMap in Order Service to get data from redis key instead of from ensureConcertCache.
+- Made the first connection to SSE on Order Service ignore when a payment does not exist yet instead of throwing an error.
+- Changed some variable names to camelCase to follow the naming convention.
+- Made some blocking functions use Promise.all() to execute in parallel to improve performance.
+- Added Promise<> to more repository functions to make typing more explicit.
+
+#### Fixes
+
+- Added a missing notification proxy in api gateway.
+- Fixed a bug in notification that uses the wrong varible name when generating an email.
+- Fixed a bug in Ticket Service that parsed the wrong private and public ed25519 key when signing ticket.
+
 ### v0.5.0: Notification Service (2026-06-22)
 
 - Added Notification Service to handle user notifications.
@@ -40,7 +90,7 @@ npm run dev
   3. Added SSE to handle real-time notifications to users.
   4. Added notification_reminders table to store notification reminders for upcoming concerts.
 
-  ```sql
+```sql
   CREATE TABLE notification_reminders (
       id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id             UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -49,10 +99,10 @@ npm run dev
       processed_at        TIMESTAMPTZ,
       created_at          TIMESTAMPTZ DEFAULT now(),
   );
-  ```
+```
 
-  5. Added cron job to automatically create notification reminders for upcoming concerts.
-  6. Added Email Notification using Nodemailer to send email notifications to users for ticket purchase confirmation and reminders.
+5. Added cron job to automatically create notification reminders for upcoming concerts.
+6. Added Email Notification using Nodemailer to send email notifications to users for ticket purchase confirmation and reminders.
 
 ### v0.4.0: Ticket Service (2026-06-20)
 

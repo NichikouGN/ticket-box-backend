@@ -6,8 +6,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const PRIVATE_KEY = process.env.ED25519_PRIVATE_KEY;
-const PUBLIC_KEY = process.env.ED25519_PUBLIC_KEY;
+const PRIVATE_KEY = process.env.ED25519_PRIVATE_KEY!.replace(/\\n/g, "\n");
+const PUBLIC_KEY = process.env.ED25519_PUBLIC_KEY!.replace(/\\n/g, "\n");
+
 if (!PRIVATE_KEY) {
   throw new Error("ED25519_PRIVATE_KEY is not defined in environment variables.");
 }
@@ -68,45 +69,84 @@ export const TicketService = {
     return tickets;
   },
 
-  async verifyTicket(ticketData: {
-    ticketId: string;
-    userId: string;
-    concertId: string;
-    ticketTypeId: string;
-  }) {
-    if (!ticketData) {
-      throw new AppError("Ticket data is required for verification.", 400);
-    }
+  async verifyTicket(ticketData: { ticketId: string; userId: string; concertId: string; ticketTypeId: string }) {
+    try {
+      if (!ticketData) {
+        throw new AppError("Ticket data is required for verification.", 400);
+      }
 
-    const ticket = await TicketRepository.findTicketById(db, ticketData.ticketId);
-    if (!ticket) {
-      throw new AppError("Ticket not found.", 404);
-    }
+      const ticket = await TicketRepository.findTicketById(db, ticketData.ticketId);
 
-    if (
-      ticket.ticketId !== ticketData.ticketId ||
-      ticket.userId !== ticketData.userId ||
-      ticket.concertId !== ticketData.concertId ||
-      ticket.ticketTypeId !== ticketData.ticketTypeId
-    ) {
-      throw new AppError("Ticket data does not match.", 400);
-    }
+      if (!ticket) {
+        throw new AppError("Ticket not found.", 404);
+      }
 
-    return { message: "Ticket verified successfully." };
+      if (ticket.status === "USED") {
+        throw new AppError("Ticket has already been used.", 409);
+      }
+
+      if (
+        ticket.ticketId !== ticketData.ticketId ||
+        ticket.userId !== ticketData.userId ||
+        ticket.concertId !== ticketData.concertId ||
+        ticket.ticketTypeId !== ticketData.ticketTypeId
+      ) {
+        throw new AppError("Ticket data does not match.", 400);
+      }
+
+      return "Ticket verified successfully.";
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async markTicketAsUsed(ticketId: string, staffId?: string) {
+    try {
+      if (!ticketId) {
+        throw new AppError("Ticket ID is required to mark ticket as used.", 400);
+      }
+
+      if (!staffId) {
+        throw new AppError("Staff ID is required to mark ticket as used.", 400);
+      }
+
+      const ticket = await TicketRepository.findTicketById(db, ticketId);
+
+      if (!ticket) {
+        throw new AppError("Ticket not found.", 404);
+      }
+
+      if (ticket.status === "USED") {
+        throw new AppError("Ticket has already been used.", 409);
+      }
+
+      await TicketRepository.markTicketAsUsed(db, ticketId, staffId);
+    } catch (error) {
+      throw error;
+    }
   },
 
   async getCheckinStats(concertId: string) {
-    if (!concertId) {
-      throw new AppError("Concert ID is required to fetch check-in stats.", 400);
-    }
-    const tickets = await TicketRepository.getCheckinStats(db, concertId);
-    const totalTickets = tickets.length;
-    const checkedInTickets = tickets.filter((ticket) => ticket.status === "USED").length;
+    try {
+      if (!concertId) {
+        throw new AppError("Concert ID is required to fetch check-in stats.", 400);
+      }
+      const tickets = await TicketRepository.getCheckinStats(db, concertId);
 
-    return {
-      totalTickets,
-      checkedInTickets,
-      remainingTickets: totalTickets - checkedInTickets,
-    };
+      if (!tickets || tickets.length === 0) {
+        throw new AppError("No tickets found for the given concert ID.", 404);
+      }
+
+      const totalTickets = tickets.length;
+      const checkedInTickets = tickets.filter((ticket) => ticket.status === "USED").length;
+
+      return {
+        totalTickets,
+        checkedInTickets,
+        remainingTickets: totalTickets - checkedInTickets,
+      };
+    } catch (error) {
+      throw error;
+    }
   },
 };

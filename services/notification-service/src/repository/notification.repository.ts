@@ -36,8 +36,22 @@ export const NotificationRepository = {
     });
   },
 
-  async getNotificationsForUser(db: DB, userId: string, offset: number, limit: number) {
+  async getNotificationsForUser(
+    db: DB,
+    userId: string,
+    offset: number,
+    limit: number,
+  ): Promise<
+    {
+      id: string;
+      type: string;
+      title: string;
+      userStatus: string;
+      createdAt: Date;
+    }[]
+  > {
     const notifications = await db("notifications")
+      .select("id", "type", "title", "user_status", "created_at")
       .where("user_id", userId)
       .orderBy("created_at", "desc")
       .limit(limit)
@@ -45,11 +59,48 @@ export const NotificationRepository = {
 
     return notifications.map((n) => ({
       id: n.id,
-      eventType: n.event_type,
+      type: n.type,
       title: n.title,
-      message: n.message,
       userStatus: n.user_status,
       createdAt: n.created_at,
     }));
+  },
+
+  async getNotificationCount(db: DB, userId: string): Promise<number> {
+    const result = await db("notifications").where("user_id", userId).count("id as total").first();
+    if (!result) {
+      return 0;
+    }
+    return Number(result.total);
+  },
+  async getDetailedNotification(
+    db: DB,
+    userId: string,
+    notificationId: string,
+  ): Promise<{
+    id: string;
+    type: string;
+    title: string;
+    message: string;
+    userStatus: string;
+    createdAt: Date;
+  } | null> {
+    const notification = await db("notifications")
+      .select("id", "type", "title", "message", "user_status", "created_at")
+      .where({ user_id: userId, id: notificationId })
+      .first();
+
+    if (!notification) {
+      return null;
+    }
+
+    return {
+      id: notification.id,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      userStatus: notification.user_status,
+      createdAt: notification.created_at,
+    };
   },
 };

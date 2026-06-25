@@ -56,7 +56,7 @@ redisSubcriber.on("message", (channel, message) => {
 app.get("/health", healthHandler);
 app.get("/api/v1/health", healthHandler);
 
-app.get("/", notificationRoutes);
+app.use("/", notificationRoutes);
 
 app.use((req, res) => {
   console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);

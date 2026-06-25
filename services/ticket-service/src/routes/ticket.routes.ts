@@ -6,8 +6,8 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get("/", TicketController.getTickets);
-router.get("/tickets/:ticketId", TicketController.getTicketById);
 router.get("/concerts/:concertId", TicketController.getTicketsByConcertId);
+router.get("/:ticketId", TicketController.getTicketById);
+router.get("/", TicketController.getTickets);
 
 export default router;

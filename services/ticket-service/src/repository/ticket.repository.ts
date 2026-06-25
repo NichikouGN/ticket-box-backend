@@ -28,16 +28,27 @@ export const TicketRepository = {
     userId: string;
     concertId: string;
     ticketTypeId: string;
-  }> {
+    status: "UNUSED" | "USED";
+    createdAt: string;
+    usedAt: string | null;
+  } | null> {
     const ticket = await db("tickets")
       .where({ id: ticketId })
-      .select("id", "user_id", "concert_id", "ticket_type_id")
+      .select("id", "user_id", "concert_id", "ticket_type_id", "status", "created_at", "used_at")
       .first();
+
+    if (!ticket) {
+      return null;
+    }
+
     return {
       ticketId: ticket?.id,
       userId: ticket?.user_id,
       concertId: ticket?.concert_id,
       ticketTypeId: ticket?.ticket_type_id,
+      status: ticket?.status,
+      createdAt: ticket?.created_at,
+      usedAt: ticket?.used_at,
     };
   },
   async findTicketsByConcertId(
@@ -57,6 +68,14 @@ export const TicketRepository = {
       .where({ concert_id: concertId })
       .select("id", "user_id", "ticket_type_id", "status", "created_at", "used_at");
     return tickets;
+  },
+
+  async markTicketAsUsed(db: DB, ticketId: string, staffId: string) {
+    await db("tickets").where({ id: ticketId }).update({
+      status: "USED",
+      used_at: db.fn.now(),
+      used_by_staff: staffId,
+    });
   },
 
   async getCheckinStats(

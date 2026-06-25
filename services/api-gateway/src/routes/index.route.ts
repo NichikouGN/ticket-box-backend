@@ -4,6 +4,7 @@ import { concertProxy, organizerArtistProxy, organizerConcertProxy } from "../pr
 import { orderProxy } from "../proxy/orders.proxy.js";
 // import { paymentProxy } from "../proxy/payment.proxy.js";
 import { checkinProxy, ticketProxy } from "../proxy/tickets.proxy.js";
+import { notificationProxy } from "../proxy/notifications.proxy.js";
 
 const router = Router();
 
@@ -20,6 +21,8 @@ router.use("/api/v1/orders", orderProxy);
 
 router.use("/api/v1/tickets", ticketProxy);
 router.use("/api/v1/checkin", checkinProxy);
+
+router.use("/api/v1/notifications", notificationProxy);
 
 router.get("/", (req, res) => {
   res.json({

@@ -71,7 +71,7 @@ export const ConcertService = {
     if (useCache) {
       const cached = parseCachedValue<{
         data: ConcertListItem[];
-        pagination: { currentPage: number; totalPages: number; totalItems: number };
+        total: { page: number; limit: number; total: number };
       }>((await safeRedisMGet([key]))?.[0]);
 
       if (cached) {
@@ -96,10 +96,10 @@ export const ConcertService = {
 
     const payload = {
       data: rows.map((row) => toListItem(row as Record<string, unknown>)),
-      pagination: {
-        currentPage: page,
-        totalPage: Math.max(1, Math.ceil(totalItems / limit)),
-        totalItems: totalItems,
+      total: {
+        page: page,
+        limit: limit,
+        total: totalItems,
       },
     };
 
