@@ -36,17 +36,17 @@ export type CheckoutSessionResponse = {
 
 export type PaymentRecord = {
   id: string;
-  order_id: string;
-  user_id: string;
+  orderId: string;
+  userId: string;
   amount: number;
-  payment_method: string;
+  paymentMethod: string;
   status: PaymentStatus;
-  payment_session_id: string | null;
-  payment_intent_id: string | null;
-  payment_url: string | null;
-  created_at: string;
-  updated_at: string;
-  payment_deadline: string;
+  paymentSessionId: string | null;
+  paymentIntentId: string | null;
+  paymentUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  paymentDeadline: string;
 };
 
 export type CreatePaymentResponse = {
@@ -77,10 +77,9 @@ export type OrderResponse = {
 
 export type OutboxEventType = {
   id: string;
-  event_type: string;
+  eventType: string;
   payload: Object;
   status: "PENDING" | "PROCESSED" | "FAILED";
-  retries: number;
-  next_retry_at: Date;
-  created_at: Date;
+  nextRetryAt: Date;
+  createdAt: Date;
 };

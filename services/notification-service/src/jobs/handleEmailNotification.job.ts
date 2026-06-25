@@ -27,7 +27,7 @@ export const handleEmailNotification = async (job: any, notificationType: "ORDER
       userInfo: {
         id: string;
         email: string;
-        full_name: string;
+        fullName: string;
         role: string;
         status: string;
       };

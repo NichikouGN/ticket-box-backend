@@ -64,10 +64,10 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
   }
   const orderId = params.data;
 
-  let currentStatus;
+  let paymentUrlPayload: { orderId: string; paymentUrl: string; status: string; paymentDeadline: string } | undefined;
   try {
-    currentStatus = await OrderService.getPaymentUrl(orderId);
-    logger.info(currentStatus, `[SSE] Current status for order ID ${orderId}:`);
+    paymentUrlPayload = await OrderService.getPaymentUrl(orderId);
+    logger.info(paymentUrlPayload, `[SSE] Current status for order ID ${orderId}:`);
   } catch (error) {
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({ success: false, message: error.message });
@@ -81,9 +81,9 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
     Connection: "keep-alive",
   });
 
-  if (["PENDING_PAYMENT", "COMPLETED", "FAILED", "EXPIRED"].includes(currentStatus.status)) {
+  if (paymentUrlPayload && ["PENDING_PAYMENT", "COMPLETED", "FAILED", "EXPIRED"].includes(paymentUrlPayload.status)) {
     res.write(`event: ORDER_UPDATED\n`);
-    res.write(`data: ${JSON.stringify(currentStatus)}\n\n`);
+    res.write(`data: ${JSON.stringify(paymentUrlPayload)}\n\n`);
     return res.end();
   }
 

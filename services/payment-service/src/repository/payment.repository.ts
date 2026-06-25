@@ -5,12 +5,47 @@ import logger from "../utils/logger.js";
 type DB = Knex | Knex.Transaction;
 
 export const PaymentRepository = {
-  async findById(paymentId: string) {
-    return db("payments").where("id", paymentId).first<PaymentRecord>();
+  async findById(paymentId: string): Promise<PaymentRecord | null> {
+    const result = await db("payments").where("id", paymentId).first();
+    if (!result) {
+      return null;
+    }
+
+    return {
+      id: result?.id,
+      orderId: result?.order_id,
+      userId: result?.user_id,
+      amount: result?.amount,
+      paymentMethod: result?.payment_method,
+      status: result?.status as PaymentStatus,
+      paymentSessionId: result?.payment_session_id,
+      paymentIntentId: result?.payment_intent_id,
+      paymentUrl: result?.payment_url,
+      createdAt: result?.created_at,
+      updatedAt: result?.updated_at,
+      paymentDeadline: result?.payment_deadline,
+    } as PaymentRecord;
   },
 
-  async findByOrderId(orderId: string) {
-    return db("payments").where("order_id", orderId).first<PaymentRecord>();
+  async findByOrderId(orderId: string): Promise<PaymentRecord | null> {
+    const result = await db("payments").where("order_id", orderId).first();
+    if (!result) {
+      return null;
+    }
+    return {
+      id: result?.id,
+      orderId: result?.order_id,
+      userId: result?.user_id,
+      amount: result?.amount,
+      paymentMethod: result?.payment_method,
+      status: result?.status as PaymentStatus,
+      paymentSessionId: result?.payment_session_id,
+      paymentIntentId: result?.payment_intent_id,
+      paymentUrl: result?.payment_url,
+      createdAt: result?.created_at,
+      updatedAt: result?.updated_at,
+      paymentDeadline: result?.payment_deadline,
+    } as PaymentRecord;
   },
 
   /**
@@ -74,13 +109,7 @@ export const PaymentRepository = {
     return db("refunds").where("id", refundId).first();
   },
 
-  async addRefundRecord(
-    db: DB,
-    refundId: string,
-    paymentIntentId: string,
-    paymentId: string,
-    amountTotal: number,
-  ) {
+  async addRefundRecord(db: DB, refundId: string, paymentIntentId: string, paymentId: string, amountTotal: number) {
     logger.info(
       { paymentIntentId, refundId, amountTotal },
       "[Repository - addRefundRecord] Adding refund record for payment intent ID:",

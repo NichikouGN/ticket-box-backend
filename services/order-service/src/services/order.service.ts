@@ -17,6 +17,7 @@ import { safeRedisHGetAll, safeRedisGet, safeRedisSet, safeRedisDel } from "../u
 import logger from "../utils/logger.js";
 import dotenv from "dotenv";
 import { paymentClient } from "../clients/payment.client.js";
+import { AxiosError } from "axios";
 dotenv.config();
 
 const CLEANUP_WINDOW_MINUTES = parseInt(process.env.CLEANUP_WINDOW_MINUTES || "15");
@@ -241,24 +242,38 @@ export const OrderService = {
   },
 
   //For SSE
-  async getPaymentUrl(orderId: string): Promise<{ paymentUrl: string; status: string }> {
+  async getPaymentUrl(
+    orderId: string,
+  ): Promise<{ orderId: string; paymentUrl: string; status: string; paymentDeadline: string } | undefined> {
     try {
-      const response = (await paymentClient.get(`/payments/${orderId}/url`)).data as {
+      const response = await paymentClient.get(`/payments/${orderId}/url`);
+      const data = response.data as {
         success: boolean;
         data: {
+          orderId: string;
           paymentUrl: string;
           status: string;
+          paymentDeadline: string;
         };
       };
 
-      const data = response.data;
+      const paymentData = data.data;
 
       return {
-        paymentUrl: data.paymentUrl,
-        status: data.status,
+        orderId: paymentData.orderId,
+        paymentUrl: paymentData.paymentUrl,
+        status: paymentData.status,
+        paymentDeadline: paymentData.paymentDeadline,
       };
     } catch (error) {
-      console.error("Error fetching payment URL:", error);
+      if (error instanceof AxiosError) {
+        console.error("Payment not found for given order, waiting for it to be created...", error.message);
+        if (error.status === 404) {
+          return;
+        } else {
+          throw new AppError("Failed to fetch payment URL", 500);
+        }
+      }
       throw new AppError("Failed to fetch payment URL", 500);
     }
   },

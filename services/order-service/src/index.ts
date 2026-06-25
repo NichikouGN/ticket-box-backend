@@ -41,11 +41,11 @@ redisSubcriber.subscribe("order_updates", (err) => {
 
 redisSubcriber.on("message", (channel, message) => {
   if (channel === "order_updates") {
-    const { orderId, status, paymentUrl } = JSON.parse(message);
+    const { orderId, status, paymentUrl, paymentDeadline } = JSON.parse(message);
     const clientStream = activeSSEConnections.get(orderId);
     if (clientStream) {
       clientStream.write(`event: ORDER_UPDATED\n`);
-      clientStream.write(`data: ${JSON.stringify({ status, paymentUrl })}\n\n`);
+      clientStream.write(`data: ${JSON.stringify({ orderId, status, paymentUrl, paymentDeadline })}\n\n`);
       clientStream.end();
     }
   }

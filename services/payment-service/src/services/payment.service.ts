@@ -19,13 +19,13 @@ export const PaymentService = {
 
       if (existing) {
         logger.info(
-          { paymentId: existing.id, orderId: existing.order_id },
+          { paymentId: existing.id, orderId: existing.orderId },
           "[Service - createPayment] Payment already exists for order, returning existing payment info:",
-          existing.order_id,
+          existing.orderId,
         );
         return {
-          paymentUrl: existing.payment_url || "",
-          paymentDeadline: existing.payment_deadline || "",
+          paymentUrl: existing.paymentUrl || "",
+          paymentDeadline: existing.paymentDeadline || "",
         };
       }
 
@@ -53,9 +53,9 @@ export const PaymentService = {
       }
 
       logger.info(
-        { paymentId: payment.id, orderId: payment.order_id },
+        { paymentId: payment.id, orderId: payment.orderId },
         "[Service - createPayment] Payment record created successfully for order:",
-        payment.order_id,
+        payment.orderId,
       );
 
       return {
@@ -83,16 +83,20 @@ export const PaymentService = {
     return await PaymentRepository.findById(payment.id);
   },
 
-  async getPaymentUrl(orderId: string): Promise<{ paymentUrl: string; status: string }> {
+  async getPaymentUrl(
+    orderId: string,
+  ): Promise<{ orderId: string; paymentUrl: string; status: string; paymentDeadline: string }> {
     const payment = await PaymentRepository.findByOrderId(orderId);
     if (!payment) {
-      logger.warn({ orderId }, "[Service - getPaymentUrl] Payment not found for order:", orderId);
+      logger.warn({ orderId }, "[Service - getPaymentUrl] Payment not found for order.", orderId);
       throw new AppError("Payment not found for the given order", 404);
     }
 
     return {
-      paymentUrl: payment.payment_url || "",
+      orderId: payment.orderId,
+      paymentUrl: payment.paymentUrl || "",
       status: payment.status,
+      paymentDeadline: payment.paymentDeadline || "",
     };
   },
 };

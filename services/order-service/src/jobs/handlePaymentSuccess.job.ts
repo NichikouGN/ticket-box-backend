@@ -4,7 +4,6 @@ import { redis } from "../clients/redis.client.js";
 import { handleTicketPreparation } from "./handleTicketPreparation.job.js";
 import { OutboxRepository } from "../repository/outbox.repository.js";
 import { concertClient } from "../clients/concert.client.js";
-import logger from "../utils/logger.js";
 import { userClient } from "../clients/user.client.js";
 
 export const handlePaymentSuccessJob = async (job: any) => {

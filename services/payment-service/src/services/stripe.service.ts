@@ -5,11 +5,7 @@ import db from "../db/knex.js";
 import { PaymentRepository } from "../repository/payment.repository.js";
 import { AppError } from "../types/appError.types.js";
 import { OutboxRepository } from "../repository/outbox.repository.js";
-import type {
-  CheckoutSessionResponse,
-  CreateOrderInput,
-  PaymentRecord,
-} from "../types/payment.types.js";
+import type { CheckoutSessionResponse, CreateOrderInput, PaymentRecord } from "../types/payment.types.js";
 import logger from "../utils/logger.js";
 import { stripe } from "../clients/stripe.client.js";
 
@@ -117,7 +113,7 @@ export const StripeService = {
         await StripeRepository.writePaymentIntentId(trx, paymentId, paymentIntentId as string);
         await PaymentRepository.updatePaymentStatus(trx, paymentId, "COMPLETED");
         await OutboxRepository.createPaymentOutboxEvent(trx, "PAYMENT_SUCCESS", 30, {
-          orderId: paymentRecord.order_id,
+          orderId: paymentRecord.orderId,
         });
       });
     } else {
@@ -138,10 +134,7 @@ export const StripeService = {
     amountTotal: number;
   }) {
     if (!paymentIntentId) {
-      logger.error(
-        { paymentId, amountTotal },
-        `[StripeService] Missing paymentIntentId for late webhook handling`,
-      );
+      logger.error({ paymentId, amountTotal }, `[StripeService] Missing paymentIntentId for late webhook handling`);
       return;
     }
 
@@ -160,10 +153,7 @@ export const StripeService = {
     const paymentRecord = await PaymentRepository.findRefundsById(refundId);
 
     if (!paymentRecord) {
-      logger.error(
-        { refundId },
-        `[StripeService] Payment record not found for refundId: ${refundId}`,
-      );
+      logger.error({ refundId }, `[StripeService] Payment record not found for refundId: ${refundId}`);
       return;
     }
 
@@ -177,20 +167,12 @@ export const StripeService = {
   async handleCheckoutSessionExpired(session: Stripe.Checkout.Session) {
     const metaData = session.metadata;
 
-    console.log(
-      "[Stripe] Handling checkout.session.expired event for session:",
-      session.id,
-      "Metadata:",
-      metaData,
-    );
+    console.log("[Stripe] Handling checkout.session.expired event for session:", session.id, "Metadata:", metaData);
 
     const paymentId = metaData?.paymentId;
 
     if (!paymentId) {
-      logger.error(
-        { sessionId: session.id, metadata: metaData },
-        "[Stripe] Missing paymentId in session metadata",
-      );
+      logger.error({ sessionId: session.id, metadata: metaData }, "[Stripe] Missing paymentId in session metadata");
       return;
     }
 
@@ -220,7 +202,7 @@ export const StripeService = {
     await db.transaction(async (trx) => {
       await PaymentRepository.updatePaymentStatus(trx, paymentId, "EXPIRED");
       await OutboxRepository.createPaymentOutboxEvent(trx, "PAYMENT_EXPIRED", 30, {
-        orderId: paymentRecord.order_id,
+        orderId: paymentRecord.orderId,
       });
     });
   },

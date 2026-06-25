@@ -4,6 +4,7 @@ import type { OutboxEventType } from "../types/payment.types.js";
 import { orderQueue } from "../queues/order.queue.js";
 import { paymentQueue } from "../queues/payment.queue.js";
 import logger from "../utils/logger.js";
+import { OutboxRepository } from "../repository/outbox.repository.js";
 
 export const startOutboxCronJob = () => {
   let running = false;
@@ -16,13 +17,7 @@ export const startOutboxCronJob = () => {
     running = true;
     try {
       logger.info("[PAYMENT OUTBOX] Fetching pending events from payments_outbox table");
-      const pendingEvennts = await db("payments_outbox")
-        .where("status", "PENDING")
-        .where("next_retry_at", "<=", db.fn.now())
-        .orderBy("next_retry_at", "asc")
-        .limit(10)
-        .forUpdate()
-        .skipLocked();
+      const pendingEvennts: OutboxEventType[] = await OutboxRepository.getPendingOutboxEvents(db, 10);
 
       logger.info({ count: pendingEvennts.length }, "[PAYMENT OUTBOX] Fetched pending events");
 
@@ -37,12 +32,9 @@ export const startOutboxCronJob = () => {
   });
 
   const handlePendingEvents = async (event: OutboxEventType) => {
-    logger.info(
-      { eventId: event.id, eventType: event.event_type },
-      "[PAYMENT OUTBOX] Processing outbox event",
-    );
+    logger.info({ eventId: event.id, eventType: event.eventType }, "[PAYMENT OUTBOX] Processing outbox event");
     try {
-      switch (event.event_type) {
+      switch (event.eventType) {
         case "PAYMENT_CREATED":
           await orderQueue.add("PAYMENT_CREATED", event.payload, {
             attempts: 3,
@@ -74,10 +66,7 @@ export const startOutboxCronJob = () => {
           });
           break;
         default:
-          logger.warn(
-            { eventType: event.event_type },
-            "Received unknown outbox event type, skipping",
-          );
+          logger.warn({ eventType: event.eventType }, "Received unknown outbox event type, skipping");
       }
 
       await db("payments_outbox").where({ id: event.id }).update({ status: "PROCESSED" });

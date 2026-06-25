@@ -6,6 +6,7 @@
     "services/*"
   ],
   "scripts": {
+    "build": "concurrently \"npm run build:api-gateway\" \"npm run build:user-service\" \"npm run build:concert-service\" \"npm run build:order-service\" \"npm run build:payment-service\" \"npm run build:ticket-service\" \"npm run build:notification-service\"",
     "dev": "concurrently \"npm run dev:stripe\" \"npm run dev:api-gateway\" \"npm run dev:user-service\" \"npm run dev:concert-service\" \"npm run dev:order-service\" \"npm run dev:payment-service\" \"npm run dev:ticket-service\" \"npm run dev:notification-service\"",
     "relay": "concurrently \"npm run dev:order-outbox-relay\" \"npm run dev:payment-outbox-relay\" \"npm run dev:notification-outbox-relay\" \"npm run dev:concert-outbox-relay\"",
     "cron": "concurrently \"npm run dev:order-outbox-cron\" \"npm run dev:payment-outbox-cron\" \"npm run dev:notification-reminder-cron\" \"npm run dev:notifiation-outbox-cron\"",
@@ -24,7 +25,14 @@
     "dev:order-outbox-cron": "cd services/order-service && tsx src/jobs/outboxCron.job.ts",
     "dev:payment-outbox-cron": "cd services/payment-service && tsx src/jobs/outboxCron.job.ts",
     "dev:notification-reminder-cron": "cd services/notification-service && tsx src/jobs/reminderCron.job.ts",
-    "dev:notifiation-outbox-cron": "cd services/notification-service && tsx src/jobs/outboxCron.job.ts"
+    "dev:notifiation-outbox-cron": "cd services/notification-service && tsx src/jobs/outboxCron.job.ts",
+    "build:api-gateway": "cd services/api-gateway && tsc",
+    "build:user-service": "cd services/user-service && tsc",
+    "build:concert-service": "cd services/concert-service && tsc",
+    "build:payment-service": "cd services/payment-service && tsc",
+    "build:order-service": "cd services/order-service && tsc",
+    "build:ticket-service": "cd services/ticket-service && tsc",
+    "build:notification-service": "cd services/notification-service && tsc"
   },
   "dependencies": {
     "@google/genai": "^2.9.0",
