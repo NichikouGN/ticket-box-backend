@@ -30,22 +30,43 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Not Found" });
 });
 
-export const activeSSEConnections = new Map<string, Response>();
-const redisSubcriber = new Redis("redis://localhost:6379");
+export const paymentUrlConnections = new Map<string, Response>();
+export const orderConfirmConnections = new Map<string, Response>();
 
-redisSubcriber.subscribe("order_updates", (err) => {
+const paymentSubscriber = new Redis("redis://localhost:6379");
+const orderConfirmSubscriber = new Redis("redis://localhost:6379");
+
+paymentSubscriber.subscribe("payment_url_updates", (err) => {
   if (err) {
-    console.error("Failed to subscribe to order_updates channel:", err);
+    console.error("Failed to subscribe to payment_url_updates channel:", err);
   }
 });
 
-redisSubcriber.on("message", (channel, message) => {
-  if (channel === "order_updates") {
+paymentSubscriber.on("message", (channel, message) => {
+  if (channel === "payment_url_updates") {
     const { orderId, status, paymentUrl, paymentDeadline } = JSON.parse(message);
-    const clientStream = activeSSEConnections.get(orderId);
+    const clientStream = paymentUrlConnections.get(orderId);
     if (clientStream) {
       clientStream.write(`event: ORDER_UPDATED\n`);
       clientStream.write(`data: ${JSON.stringify({ orderId, status, paymentUrl, paymentDeadline })}\n\n`);
+      clientStream.end();
+    }
+  }
+});
+
+orderConfirmSubscriber.subscribe("order_confirm_updates", (err) => {
+  if (err) {
+    console.error("Failed to subscribe to order_confirm_updates channel:", err);
+  }
+});
+
+orderConfirmSubscriber.on("message", (channel, message) => {
+  if (channel === "order_confirm_updates") {
+    const { orderId, status } = JSON.parse(message);
+    const clientStream = orderConfirmConnections.get(orderId);
+    if (clientStream) {
+      clientStream.write(`event: ORDER_UPDATED\n`);
+      clientStream.write(`data: ${JSON.stringify({ orderId, status })}\n\n`);
       clientStream.end();
     }
   }

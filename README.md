@@ -32,6 +32,18 @@ npm run dev
 
 ## 4. Version
 
+### v0.6.1: Minor Changes & Fixes (2026-06-27)
+
+#### Changes
+
+- Added a missing endpoint to get confirmation for order status after purchase is completed.
+- Changed stream api to /stream/payment-url and /stream/order-confirm to have better separation.
+- Split ActiveSSEConnections into paymentUrlConnections and orderConfirmConnections to have better separation.
+
+#### Fixes
+
+- Fixed concert service not returning entries older than current date when fetching concerts.
+
 ### v0.6.0: Artist & AI Bio Generation (2026-06-25)
 
 #### New additions

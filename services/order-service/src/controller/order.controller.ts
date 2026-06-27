@@ -3,7 +3,7 @@ import { AppError } from "../types/appError.types.js";
 import { createOrderSchema, listOrdersQuerySchema, uuidSchema } from "../types/order.types.js";
 import { OrderService } from "../services/order.service.js";
 import logger from "../utils/logger.js";
-import { activeSSEConnections } from "../index.js";
+import { paymentUrlConnections, orderConfirmConnections } from "../index.js";
 
 /**
  * Creates a new order.
@@ -57,7 +57,7 @@ export const createOrder = async (req: Request, res: Response) => {
  * If the order is already in a final state (PENDING_PAYMENT, COMPLETED, FAILED, EXPIRED), it sends the current status immediately and ends the stream.
  * Otherwise, it keeps the connection open and listens for updates on the order status, sending updates to the client as they occur. The connection will be closed after 2 minutes or when the client disconnects.
  */
-export const streamOrderUrl = async (req: Request, res: Response) => {
+export const streamPaymentUrl = async (req: Request, res: Response) => {
   const params = uuidSchema.safeParse(req.params.orderId);
   if (!params.success) {
     return res.status(400).json({ success: false, message: "Invalid order id" });
@@ -87,7 +87,7 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
     return res.end();
   }
 
-  activeSSEConnections.set(orderId, res);
+  paymentUrlConnections.set(orderId, res);
   const keepAliveInterval = setInterval(() => res.write(":\n\n"), 15000);
 
   const timeout = setTimeout(() => {
@@ -99,6 +99,54 @@ export const streamOrderUrl = async (req: Request, res: Response) => {
   req.on("close", () => {
     clearInterval(keepAliveInterval);
     clearTimeout(timeout);
-    activeSSEConnections.delete(orderId);
+    paymentUrlConnections.delete(orderId);
+  });
+};
+
+export const streamOrderConfirm = async (req: Request, res: Response) => {
+  const params = uuidSchema.safeParse(req.params.orderId);
+  if (!params.success) {
+    return res.status(400).json({ success: false, message: "Invalid order id" });
+  }
+  const orderId = params.data;
+
+  let orderConfirmPayload: { orderId: string; status: string } | undefined;
+
+  try {
+    orderConfirmPayload = await OrderService.getOrderConfirm(orderId);
+    logger.info(orderConfirmPayload, `[SSE] Current status for order ID ${orderId}:`);
+  } catch (error) {
+    console.log(error, "[SSE] Error fetching order confirmation:");
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({ success: false, message: error.message });
+    }
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+
+  if (orderConfirmPayload && ["COMPLETED", "FAILED", "EXPIRED"].includes(orderConfirmPayload.status)) {
+    res.write(`event: ORDER_UPDATED\n`);
+    res.write(`data: ${JSON.stringify(orderConfirmPayload)}\n\n`);
+    return res.end();
+  }
+
+  orderConfirmConnections.set(orderId, res);
+  const keepAliveInterval = setInterval(() => res.write(":\n\n"), 15000);
+
+  const timeout = setTimeout(() => {
+    res.write(`event: TIMEOUT\n`);
+    res.write(`data: {}\n\n`);
+    res.end();
+  });
+
+  req.on("close", () => {
+    clearInterval(keepAliveInterval);
+    clearTimeout(timeout);
+    orderConfirmConnections.delete(orderId);
   });
 };

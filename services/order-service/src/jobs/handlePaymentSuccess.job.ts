@@ -76,7 +76,7 @@ export const handlePaymentSuccessJob = async (job: any) => {
 
     const redisPublisher = redis.duplicate();
     await redisPublisher.publish(
-      "order_updates",
+      "order_confirm_updates",
       JSON.stringify({
         orderId: orderId,
         status: "COMPLETED",

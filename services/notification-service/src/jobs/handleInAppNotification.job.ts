@@ -1,8 +1,10 @@
+import { DatabaseError } from "pg";
 import { orderClient } from "../clients/order.client.js";
 import { redis } from "../clients/redis.client.js";
 import db from "../db/knex.js";
 import { NotificationRepository } from "../repository/notification.repository.js";
 import type { NotificationPayload } from "../types/notification.types.js";
+import { UnrecoverableError } from "bullmq";
 
 export const handleInAppNotification = async (job: any, notificationType: "ORDER_CONFIRMATION" | "REMINDER_24H") => {
   try {
@@ -45,7 +47,13 @@ export const handleInAppNotification = async (job: any, notificationType: "ORDER
     );
     await redisPublisher.quit();
   } catch (error) {
-    console.log("Error in handleInAppNotification:", error);
+    if (error instanceof DatabaseError) {
+      if (error.code === "23505") {
+        console.log("Duplicate notification detected, skipping insertion.");
+        throw new UnrecoverableError("Duplicate notification detected, skipping insertion.");
+      }
+    }
+    console.log("Error in handleInAppNotification:", typeof error);
     throw error;
   }
 };

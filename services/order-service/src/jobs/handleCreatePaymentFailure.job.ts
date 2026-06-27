@@ -13,7 +13,7 @@ export const handleCreatePaymentFailure = async (job: any) => {
 
     const redisPublisher = redis.duplicate();
     await redisPublisher.publish(
-      "order_updates",
+      "payment_url_updates",
       JSON.stringify({
         orderId: orderId,
         status: "PAYMENT_FAILED",

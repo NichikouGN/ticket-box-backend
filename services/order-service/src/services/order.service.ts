@@ -277,4 +277,23 @@ export const OrderService = {
       throw new AppError("Failed to fetch payment URL", 500);
     }
   },
+
+  async getOrderConfirm(orderId: string): Promise<{ orderId: string; status: string } | undefined> {
+    try {
+      const order = await OrderRepository.findById(db, orderId);
+      if (!order) {
+        throw new AppError("Order not found", 404);
+      }
+
+      return {
+        orderId: order.id,
+        status: order.status,
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError("Failed to fetch order confirmation", 500);
+    }
+  },
 };

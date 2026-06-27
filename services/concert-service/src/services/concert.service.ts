@@ -68,6 +68,10 @@ export const ConcertService = {
     const key = listKey(page, limit);
     const useCache = !organizerId;
 
+    console.log(
+      `Fetching concerts list for page: ${page}, limit: ${limit}, organizerId: ${organizerId}, useCache: ${useCache}`,
+    );
+
     if (useCache) {
       const cached = parseCachedValue<{
         data: ConcertListItem[];
@@ -87,6 +91,8 @@ export const ConcertService = {
         ConcertRepository.getPublishedConcerts(offset, limit),
         ConcertRepository.countPublishedConcerts(),
       ]);
+
+      console.log(rows, totalItems);
     } else {
       [rows, totalItems] = await Promise.all([
         ConcertRepository.getAllConcerts(offset, limit),

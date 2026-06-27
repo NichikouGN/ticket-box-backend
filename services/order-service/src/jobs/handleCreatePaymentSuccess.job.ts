@@ -11,7 +11,7 @@ export const handleCreatePaymentSuccess = async (job: any) => {
   try {
     const redisPublisher = redis.duplicate();
     await redisPublisher.publish(
-      "order_updates",
+      "payment_url_updates",
       JSON.stringify({
         orderId: orderId,
         status: "PENDING_PAYMENT",
@@ -23,7 +23,7 @@ export const handleCreatePaymentSuccess = async (job: any) => {
   } catch (error) {
     logger.error(
       { jobId: job.data.id, eventType: job.name, orderId: orderId, error: error },
-      "[Job - handleCreatePaymentSuccess] Failed to publish order update for order:",
+      "[Job - handleCreatePaymentSuccess] Failed to publish payment URL update for order:",
       orderId,
     );
     throw error;

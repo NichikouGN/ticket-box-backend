@@ -79,25 +79,27 @@ export const ConcertRepository = {
     return Number(result?.count ?? 0);
   },
   async getPublishedConcerts(offset: number, limit: number) {
-    return db("concerts as c")
-      .leftJoin("concerts_artists as ca", "ca.concert_id", "c.id")
-      .leftJoin("artists as a", "a.id", "ca.artist_id")
-      .select([...concertColumns, artistAggregation])
-      .where("c.status", "PUBLISHED")
-      .andWhere("c.event_date", ">=", db.fn.now())
-      .groupBy(
-        "c.id",
-        "c.title",
-        "c.description",
-        "c.venue",
-        "c.event_date",
-        "c.cover_image",
-        "c.seat_map_svg_url",
-        "c.status",
-      )
-      .orderBy("c.event_date", "asc")
-      .limit(limit)
-      .offset(offset);
+    return (
+      db("concerts as c")
+        .leftJoin("concerts_artists as ca", "ca.concert_id", "c.id")
+        .leftJoin("artists as a", "a.id", "ca.artist_id")
+        .select([...concertColumns, artistAggregation])
+        .where("c.status", "PUBLISHED")
+        // .andWhere("c.event_date", ">=", db.fn.now())
+        .groupBy(
+          "c.id",
+          "c.title",
+          "c.description",
+          "c.venue",
+          "c.event_date",
+          "c.cover_image",
+          "c.seat_map_svg_url",
+          "c.status",
+        )
+        .orderBy("c.event_date", "asc")
+        .limit(limit)
+        .offset(offset)
+    );
   },
 
   async getConcertDetail(concertId: string): Promise<{
