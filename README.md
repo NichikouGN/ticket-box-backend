@@ -32,6 +32,11 @@ npm run dev
 
 ## 4. Version
 
+### v0.6.2: Minor Changes & Fixes (2026-06-30)
+- Set time for setTimeout in `order.controller.ts`.
+- Add await before db.transaction in `handlePaymentSuccess.job.ts`.
+- Change from string concat to string literal in some url.
+
 ### v0.6.1: Minor Changes & Fixes (2026-06-27)
 
 #### Changes

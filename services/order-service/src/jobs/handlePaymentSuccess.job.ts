@@ -60,7 +60,7 @@ export const handlePaymentSuccessJob = async (job: any) => {
         };
       });
 
-    db.transaction(async (trx) => {
+    await db.transaction(async (trx) => {
       await OrderRepository.updateOrderStatus(trx, orderId, "COMPLETED");
       await OutboxRepository.createOrderOutboxEvent(trx, "GENERATE_TICKETS", {
         items: items,

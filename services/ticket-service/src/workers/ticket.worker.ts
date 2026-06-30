@@ -11,6 +11,7 @@ export const createPaymentWorker = async () => {
       switch (job.name) {
         case "GENERATE_TICKETS": {
           await handleTicketGeneration(job);
+          break;
         }
         default:
           return;

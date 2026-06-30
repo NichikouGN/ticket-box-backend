@@ -35,8 +35,8 @@ export const StripeService = {
         },
       ],
       mode: "payment",
-      success_url: `http://localhost:4000/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:4000/payment-cancelled`,
+      success_url: `${process.env.FRONTEND_URL || "http://localhost:5173"}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL || "http://localhost:5173"}/payment-cancelled`,
       metadata: {
         paymentId: paymentId,
         userId: input.userId,

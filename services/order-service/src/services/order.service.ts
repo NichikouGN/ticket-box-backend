@@ -268,7 +268,7 @@ export const OrderService = {
     } catch (error) {
       if (error instanceof AxiosError) {
         console.error("Payment not found for given order, waiting for it to be created...", error.message);
-        if (error.status === 404) {
+        if (error.response?.status === 404) {
           return;
         } else {
           throw new AppError("Failed to fetch payment URL", 500);
