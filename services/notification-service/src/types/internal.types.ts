@@ -15,6 +15,7 @@ export type OutboxEventPayload = {
 
 export type OutboxEventType = {
   id: string;
+  job_id: string | null;
   event_type: string;
   payload: OutboxEventPayload;
   status: "PENDING" | "PROCESSED" | "FAILED";

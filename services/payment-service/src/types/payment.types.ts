@@ -77,9 +77,10 @@ export type OrderResponse = {
 
 export type OutboxEventType = {
   id: string;
-  eventType: string;
+  job_id: string | null;
+  event_type: string;
   payload: Object;
   status: "PENDING" | "PROCESSED" | "FAILED";
-  nextRetryAt: Date;
-  createdAt: Date;
+  next_retry_at: Date;
+  created_at: Date;
 };

@@ -40,36 +40,42 @@ export const startOutboxCronJob = () => {
           await notificationQueue.add("IN_APP_NOTIFICATION", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "EMAIL_NOTIFICATION":
           await notificationQueue.add("EMAIL_NOTIFICATION", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "SET_24H_REMINDER":
           await notificationQueue.add("SET_24H_REMINDER", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "REMINDER_24H":
           await notificationQueue.add("REMINDER_24H", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "24H_IN_APP_NOTIFICATION":
           await notificationQueue.add("24H_IN_APP_NOTIFICATION", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "24H_EMAIL_NOTIFICATION":
           await notificationQueue.add("24H_EMAIL_NOTIFICATION", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         default:

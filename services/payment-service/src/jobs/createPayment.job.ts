@@ -19,11 +19,17 @@ export const createPaymentJob = async (job: any) => {
       paymentMethod: paymentMethod,
     });
 
-    await OutboxRepository.createPaymentOutboxEvent(db, "PAYMENT_CREATED", 30, {
-      orderId: orderId,
-      paymentUrl: result.paymentUrl,
-      paymentDeadline: result.paymentDeadline,
-    });
+    await OutboxRepository.createPaymentOutboxEvent(
+      db,
+      "PAYMENT_CREATED",
+      {
+        orderId: orderId,
+        paymentUrl: result.paymentUrl,
+        paymentDeadline: result.paymentDeadline,
+      },
+      `order-${orderId}-payment_created`,
+      30,
+    );
   } catch (error) {
     throw error;
   }

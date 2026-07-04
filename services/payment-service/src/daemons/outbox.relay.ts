@@ -29,48 +29,53 @@ async function startOutboxRelay() {
   client.on("notification", async (msg) => {
     if (!msg.payload) return;
 
-    const outboxRow = JSON.parse(msg.payload);
-    logger.info(
-      { eventId: outboxRow.id, eventType: outboxRow.event_type },
-      "[PAYMENT OUTBOX] Processing outbox event",
-    );
+    const outboxRow = JSON.parse(msg.payload) as {
+      id: string;
+      job_id: string;
+      event_type: string;
+      payload: Object;
+    };
+
+    logger.info({ eventId: outboxRow.id, eventType: outboxRow.event_type }, "[PAYMENT OUTBOX] Processing outbox event");
     try {
       switch (outboxRow.event_type) {
         case "PAYMENT_CREATED":
           await orderQueue.add("PAYMENT_CREATED", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
-        case "CREATE_PAYMENT_FAILURE":
-          await orderQueue.add("CREATE_PAYMENT_FAILURE", outboxRow.payload, {
+        case "CREATE_PAYMENT_FAILED":
+          await orderQueue.add("CREATE_PAYMENT_FAILED", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "PAYMENT_SUCCESS":
           await orderQueue.add("PAYMENT_SUCCESS", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "PAYMENT_EXPIRED":
           await orderQueue.add("PAYMENT_EXPIRED", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 10_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "LATE_WEBHOOK_RECEIVED":
           await paymentQueue.add("LATE_WEBHOOK_RECEIVED", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 5_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         default:
-          logger.warn(
-            { eventType: outboxRow.event_type },
-            "Received unknown outbox event type, skipping",
-          );
+          logger.warn({ eventType: outboxRow.event_type }, "Received unknown outbox event type, skipping");
       }
 
       await db("payments_outbox").where({ id: outboxRow.id }).update({ status: "PROCESSED" });

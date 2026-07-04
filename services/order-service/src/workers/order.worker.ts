@@ -15,7 +15,7 @@ export const createOrderWorker = async () => {
         case "PAYMENT_CREATED":
           await handleCreatePaymentSuccess(job);
           break;
-        case "CREATE_PAYMENT_FAILURE":
+        case "CREATE_PAYMENT_FAILED":
           await handleCreatePaymentFailure(job);
           break;
         case "CLEANUP_EXPIRED_ORDER":

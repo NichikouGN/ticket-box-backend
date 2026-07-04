@@ -81,7 +81,7 @@ export const OrganizerArtistService = {
         );
       }
 
-      await OutboxRepository.createOrderOutboxEvent(
+      await OutboxRepository.createConcertOutboxEvent(
         db,
         "GENERATE_ARTIST_BIOS",
         {

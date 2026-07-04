@@ -23,9 +23,15 @@ export const cleanupOrderJob = async (job: any) => {
 
       await db.transaction(async (trx) => {
         await OrderRepository.updateOrderStatus(trx, orderRecord.id, "EXPIRED");
-        await OutboxRepository.createOrderOutboxEvent(trx, "CLEANUP_EXPIRED_PAYMENT", {
-          orderId: orderRecord.id,
-        });
+        await OutboxRepository.createOrderOutboxEvent(
+          trx,
+          "CLEANUP_EXPIRED_PAYMENT",
+          {
+            orderId: orderRecord.id,
+          },
+          `order-${orderRecord.id}-cleanup`,
+          30,
+        );
       });
       logger.info(
         { jobId: job.data.id, eventType: job.name, orderId: orderId },

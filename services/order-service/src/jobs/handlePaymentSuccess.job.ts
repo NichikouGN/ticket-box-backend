@@ -62,16 +62,28 @@ export const handlePaymentSuccessJob = async (job: any) => {
 
     await db.transaction(async (trx) => {
       await OrderRepository.updateOrderStatus(trx, orderId, "COMPLETED");
-      await OutboxRepository.createOrderOutboxEvent(trx, "GENERATE_TICKETS", {
-        items: items,
-        orderId: orderId,
-      });
-      await OutboxRepository.createOrderOutboxEvent(trx, "NOTIFY_USER", {
-        orderId: orderId,
-        userInfo: userData.data,
-        concertData: concertData.data,
-        ticketTypes: enrichedTicketTypes,
-      });
+      await OutboxRepository.createOrderOutboxEvent(
+        trx,
+        "GENERATE_TICKETS",
+        {
+          items: items,
+          orderId: orderId,
+        },
+        `order-${orderId}-generate_tickets`,
+        30,
+      );
+      await OutboxRepository.createOrderOutboxEvent(
+        trx,
+        "NOTIFY_USER",
+        {
+          orderId: orderId,
+          userInfo: userData.data,
+          concertData: concertData.data,
+          ticketTypes: enrichedTicketTypes,
+        },
+        `order-${orderId}-notify_user`,
+        30,
+      );
     });
 
     const redisPublisher = redis.duplicate();

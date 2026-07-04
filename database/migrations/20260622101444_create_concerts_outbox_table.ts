@@ -5,6 +5,7 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable("concerts_outbox", (table) => {
     table.uuid("id").primary();
+    table.string("job_id").nullable(); // Store the BullMQ job ID for tracking
     // table.string("event_type").notNullable().checkIn(["CREATE_PAYMENT_FAILED", "REFUND_PAYMENT"]);
     table.string("event_type").notNullable();
     table.jsonb("payload").notNullable();

@@ -37,47 +37,24 @@ export const startOutboxCronJob = () => {
     try {
       switch (event.event_type) {
         case "CREATE_PAYMENT":
-          const job = await paymentQueue.add("CREATE_PAYMENT", event.payload, {
+          await paymentQueue.add("CREATE_PAYMENT", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
-
-          logger.info({ job: job }, "[ORDER OUTBOX] Added CREATE_PAYMENT job to BullMQ with job");
-
-          await db("orders_outbox").where({ id: event.id }).update({ status: "PROCESSED" });
-
-          logger.info(
-            { outboxEventId: event.id, outbotRow: event.payload },
-            "[ORDER OUTBOX] Relayed CREATE_PAYMENT outbox event to BullMQ",
-          );
-
           break;
         case "CLEANUP_EXPIRED_PAYMENT":
           await paymentQueue.add("CLEANUP_EXPIRED_PAYMENT", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
-
-          await db("orders_outbox").where({ id: event.id }).update({ status: "PROCESSED" });
-
-          logger.info(
-            { outboxEventId: event.id, outbotRow: event.payload },
-            "[ORDER OUTBOX] Relayed CLEANUP_EXPIRED_PAYMENT outbox event to BullMQ",
-          );
           break;
         default:
-          logger.warn(
-            { eventType: event.event_type },
-            "[ORDER OUTBOX] Received unknown outbox event type, skipping",
-          );
+          logger.warn({ eventType: event.event_type }, "[ORDER OUTBOX] Received unknown outbox event type, skipping");
       }
 
-      logger.info(
-        { outboxEventId: event.id, eventType: event.event_type },
-        "[ORDER OUTBOX] Successfully processed outbox event, fetching queue counts",
-      );
-      const data = await paymentQueue.getJobCounts();
-      logger.info({ jobCounts: data }, "[ORDER OUTBOX] Successfully processed outbox event");
+      await db("orders_outbox").where({ id: event.id }).update({ status: "PROCESSED" });
     } catch (err) {
       logger.error({ err }, "[ORDER OUTBOX] Failed to relay message to BullMQ");
 
@@ -85,11 +62,7 @@ export const startOutboxCronJob = () => {
       const jitter = Math.floor(Math.random() * 5_000); // Random jitter between 0 and 10 seconds
       const nextRetryAt = new Date(Date.now() + delay + jitter);
 
-      await db("orders_outbox")
-        .where({ id: event.id })
-        .update({ next_retry_at: nextRetryAt })
-        .forUpdate()
-        .skipLocked();
+      await db("orders_outbox").where({ id: event.id }).update({ next_retry_at: nextRetryAt }).forUpdate().skipLocked();
     }
   };
 };

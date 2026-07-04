@@ -112,9 +112,15 @@ export const StripeService = {
       await db.transaction(async (trx) => {
         await StripeRepository.writePaymentIntentId(trx, paymentId, paymentIntentId as string);
         await PaymentRepository.updatePaymentStatus(trx, paymentId, "COMPLETED");
-        await OutboxRepository.createPaymentOutboxEvent(trx, "PAYMENT_SUCCESS", 30, {
-          orderId: paymentRecord.orderId,
-        });
+        await OutboxRepository.createPaymentOutboxEvent(
+          trx,
+          "PAYMENT_SUCCESS",
+          {
+            orderId: paymentRecord.orderId,
+          },
+          `order-${paymentRecord.orderId}-payment_success`,
+          30,
+        );
       });
     } else {
       logger.warn(
@@ -138,11 +144,17 @@ export const StripeService = {
       return;
     }
 
-    await OutboxRepository.createPaymentOutboxEvent(db, "LATE_WEBHOOK_RECEIVED", 30, {
-      paymentIntentId,
-      paymentId,
-      amountTotal,
-    });
+    await OutboxRepository.createPaymentOutboxEvent(
+      db,
+      "LATE_WEBHOOK_RECEIVED",
+      {
+        paymentIntentId,
+        paymentId,
+        amountTotal,
+      },
+      `order-${paymentId}-late_webhook_received`,
+      30,
+    );
   },
 
   async handleRefundWebhook(refund: Stripe.Refund) {
@@ -201,9 +213,15 @@ export const StripeService = {
     );
     await db.transaction(async (trx) => {
       await PaymentRepository.updatePaymentStatus(trx, paymentId, "EXPIRED");
-      await OutboxRepository.createPaymentOutboxEvent(trx, "PAYMENT_EXPIRED", 30, {
-        orderId: paymentRecord.orderId,
-      });
+      await OutboxRepository.createPaymentOutboxEvent(
+        trx,
+        "PAYMENT_EXPIRED",
+        {
+          orderId: paymentRecord.orderId,
+        },
+        `order-${paymentRecord.orderId}-payment_expired`,
+        30,
+      );
     });
   },
 };

@@ -30,7 +30,12 @@ async function startOutboxRelay() {
   client.on("notification", async (msg) => {
     if (!msg.payload) return;
 
-    const outboxRow = JSON.parse(msg.payload);
+    const outboxRow = JSON.parse(msg.payload) as {
+      id: string;
+      job_id: string;
+      event_type: string;
+      payload: Object;
+    };
     logger.info(
       { eventId: outboxRow.id, eventType: outboxRow.event_type },
       "[NOTIFICATION OUTBOX] Processing outbox event",
@@ -41,36 +46,42 @@ async function startOutboxRelay() {
           await notificationQueue.add("IN_APP_NOTIFICATION", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "EMAIL_NOTIFICATION":
           await notificationQueue.add("EMAIL_NOTIFICATION", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "SET_24H_REMINDER":
           await notificationQueue.add("SET_24H_REMINDER", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "REMINDER_24H":
           await notificationQueue.add("REMINDER_24H", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "24H_IN_APP_NOTIFICATION":
           await notificationQueue.add("24H_IN_APP_NOTIFICATION", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "24H_EMAIL_NOTIFICATION":
           await notificationQueue.add("24H_EMAIL_NOTIFICATION", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         default:

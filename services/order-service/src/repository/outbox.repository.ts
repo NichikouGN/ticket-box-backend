@@ -4,24 +4,22 @@ import crypto from "crypto";
 type DB = Knex | Knex.Transaction;
 
 export const OutboxRepository = {
-  async createOrderOutboxEvent(db: DB, eventType: string, payload: Object) {
+  async createOrderOutboxEvent(db: DB, eventType: string, payload: Object, jobId = "", relayDelay = 30) {
     await db("orders_outbox")
       .insert({
         id: crypto.randomUUID(),
+        job_id: jobId ? jobId : null,
         event_type: eventType,
         payload: JSON.stringify(payload),
         status: "PENDING",
         created_at: db.fn.now(),
-        next_retry_at: db.raw("NOW() + INTERVAL '30 seconds'"),
+        next_retry_at: db.raw(`NOW() + INTERVAL '${relayDelay} seconds'`),
       })
       .returning("*");
   },
 
   async updateEventStatus(eventId: string, status: string) {
-    const result = await db("orders_outbox")
-      .where({ id: eventId })
-      .update({ status })
-      .returning("*");
+    const result = await db("orders_outbox").where({ id: eventId }).update({ status }).returning("*");
 
     return result[0];
   },

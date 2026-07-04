@@ -29,14 +29,22 @@ async function startOutboxRelay() {
 
   client.on("notification", async (msg) => {
     if (!msg.payload) return;
-    const outboxRow = JSON.parse(msg.payload);
+    const outboxRow = JSON.parse(msg.payload) as {
+      id: string;
+      job_id: string;
+      event_type: string;
+      payload: Object;
+    };
+
+    console.log("Received notification for outbox event:", outboxRow);
 
     try {
       switch (outboxRow.event_type) {
         case "CREATE_PAYMENT":
-          const job = await paymentQueue.add("CREATE_PAYMENT", outboxRow.payload, {
+          await paymentQueue.add("CREATE_PAYMENT", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
 
           break;
@@ -44,6 +52,7 @@ async function startOutboxRelay() {
           await paymentQueue.add("CLEANUP_EXPIRED_PAYMENT", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
 
           break;
@@ -51,12 +60,14 @@ async function startOutboxRelay() {
           await ticketQueue.add("GENERATE_TICKETS", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         case "NOTIFY_USER":
           await notificationQueue.add("NOTIFY_USER", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
           });
           break;
         default:

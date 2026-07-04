@@ -2,6 +2,7 @@ import cron from "node-cron";
 import db from "../db/knex.js";
 import logger from "../utils/logger.js";
 import { OutboxRepository } from "../repository/outbox.repository.js";
+import type { NotificationPayload } from "../types/notification.types.js";
 
 export const startReminderCron = () => {
   let running = false;
@@ -33,10 +34,16 @@ export const startReminderCron = () => {
     }
   });
 
-  const handlePendingReminders = async (reminder: any) => {
+  const handlePendingReminders = async (reminder: { id: string; user_id: string; metadata: NotificationPayload }) => {
     try {
       db.transaction(async (trx) => {
-        await OutboxRepository.createNotificationEvent(trx, "REMINDER_24H", 30, reminder.metadata);
+        await OutboxRepository.createNotificationOutboxEvent(
+          trx,
+          "REMINDER_24H",
+          reminder.metadata,
+          `reminder_24h-${reminder.metadata.orderId}`,
+          30,
+        );
         await db("notifications_reminders").where({ id: reminder.id }).update({ processed_at: db.fn.now() });
       });
     } catch (err) {

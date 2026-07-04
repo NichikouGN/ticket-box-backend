@@ -15,8 +15,8 @@ const db = knex({
       rejectUnauthorized: false,
     },
     pool: {
-      min: 2,
-      max: 4,
+      min: 1,
+      max: 2,
     },
   },
 });

@@ -32,7 +32,20 @@ npm run dev
 
 ## 4. Version
 
+### v0.6.3: Explicit BullMQ Job Id changes (2026-07-04)
+
+#### Changes
+
+- Added job_id to outbox tables schema to store the BullMQ job ID for tracking.
+- Made BullMQ uses explicit jobId to avoid duplicate jobs being created when the same event is processed multiple times (aside from concert AI Bio Generate Jobs).
+- Updated relay and cron jobs to use the job_id from outbox table when adding jobs to BullMQ queues.
+
+#### Fixes
+
+- Changed maximum connections for supabase to prevent max pool size error.
+
 ### v0.6.2: Minor Changes & Fixes (2026-06-30)
+
 - Set time for setTimeout in `order.controller.ts`.
 - Add await before db.transaction in `handlePaymentSuccess.job.ts`.
 - Change from string concat to string literal in some url.

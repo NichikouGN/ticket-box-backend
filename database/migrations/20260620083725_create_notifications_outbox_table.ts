@@ -1,18 +1,14 @@
 import type { Knex } from "knex";
-
 export async function up(knex: Knex): Promise<void> {
   await knex.raw(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
 
   await knex.schema.createTable("notifications_outbox", (table) => {
     table.uuid("id").primary();
+    table.string("job_id").nullable(); // Store the BullMQ job ID for tracking
     // table.string("event_type").notNullable().checkIn(["CREATE_PAYMENT_FAILED", "REFUND_PAYMENT"]);
     table.string("event_type").notNullable();
     table.jsonb("payload").notNullable();
-    table
-      .string("status")
-      .notNullable()
-      .defaultTo("PENDING")
-      .checkIn(["PENDING", "PROCESSED", "FAILED"]);
+    table.string("status").notNullable().defaultTo("PENDING").checkIn(["PENDING", "PROCESSED", "FAILED"]);
     // table.integer("retries").notNullable().defaultTo(0);
     table.timestamp("created_at").defaultTo(knex.fn.now()).notNullable();
     table.timestamp("next_retry_at").defaultTo(knex.fn.now()).notNullable();
@@ -44,9 +40,7 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.raw(
-    `DROP TRIGGER IF EXISTS notifications_outbox_insert_trigger ON notifications_outbox;`,
-  );
+  await knex.raw(`DROP TRIGGER IF EXISTS notifications_outbox_insert_trigger ON notifications_outbox;`);
   await knex.raw(`DROP FUNCTION IF EXISTS notify_notifications_outbox();`);
   await knex.schema.dropTableIfExists("notifications_outbox");
 }

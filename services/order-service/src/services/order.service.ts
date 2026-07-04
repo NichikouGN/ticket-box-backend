@@ -199,12 +199,18 @@ export const OrderService = {
         );
 
         //Push event to payment service via outbox pattern
-        await OutboxRepository.createOrderOutboxEvent(trx, "CREATE_PAYMENT", {
-          orderId,
-          userId,
-          amount: totalPrice,
-          paymentMethod: incoming.paymentMethod,
-        });
+        await OutboxRepository.createOrderOutboxEvent(
+          trx,
+          "CREATE_PAYMENT",
+          {
+            orderId,
+            userId,
+            amount: totalPrice,
+            paymentMethod: incoming.paymentMethod,
+          },
+          `order-${orderId}-create_payment`,
+          30,
+        );
       });
 
       orderQueue.add(

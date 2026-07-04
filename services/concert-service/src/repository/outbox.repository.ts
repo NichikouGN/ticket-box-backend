@@ -4,7 +4,7 @@ import crypto from "crypto";
 type DB = Knex | Knex.Transaction;
 
 export const OutboxRepository = {
-  async createOrderOutboxEvent(db: DB, eventType: string, payload: Object, retryDelay = 30) {
+  async createConcertOutboxEvent(db: DB, eventType: string, payload: Object, retryDelay = 30) {
     await db("concerts_outbox")
       .insert({
         id: crypto.randomUUID(),

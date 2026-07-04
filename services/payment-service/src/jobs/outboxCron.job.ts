@@ -17,11 +17,16 @@ export const startOutboxCronJob = () => {
     running = true;
     try {
       logger.info("[PAYMENT OUTBOX] Fetching pending events from payments_outbox table");
-      const pendingEvennts: OutboxEventType[] = await OutboxRepository.getPendingOutboxEvents(db, 10);
 
-      logger.info({ count: pendingEvennts.length }, "[PAYMENT OUTBOX] Fetched pending events");
+      const pendingEvents = await db("payments_outbox")
+        .where("status", "PENDING")
+        .where("next_retry_at", "<=", db.fn.now())
+        .orderBy("next_retry_at", "asc")
+        .limit(10)
+        .forUpdate()
+        .skipLocked();
 
-      for (const event of pendingEvennts) {
+      for (const event of pendingEvents) {
         await handlePendingEvents(event);
       }
     } catch (err) {
@@ -32,41 +37,46 @@ export const startOutboxCronJob = () => {
   });
 
   const handlePendingEvents = async (event: OutboxEventType) => {
-    logger.info({ eventId: event.id, eventType: event.eventType }, "[PAYMENT OUTBOX] Processing outbox event");
+    logger.info({ eventId: event.id, eventType: event.event_type }, "[PAYMENT OUTBOX] Processing outbox event");
     try {
-      switch (event.eventType) {
+      switch (event.event_type) {
         case "PAYMENT_CREATED":
           await orderQueue.add("PAYMENT_CREATED", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "CREATE_PAYMENT_FAILURE":
           await orderQueue.add("CREATE_PAYMENT_FAILURE", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "PAYMENT_SUCCESS":
           await orderQueue.add("PAYMENT_SUCCESS", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "PAYMENT_EXPIRED":
           await orderQueue.add("PAYMENT_EXPIRED", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 7_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         case "LATE_WEBHOOK_RECEIVED":
           await paymentQueue.add("LATE_WEBHOOK_RECEIVED", event.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 5_000 },
+            ...(event.job_id ? { jobId: event.job_id } : {}),
           });
           break;
         default:
-          logger.warn({ eventType: event.eventType }, "Received unknown outbox event type, skipping");
+          logger.warn({ eventType: event.event_type }, "Received unknown outbox event type, skipping");
       }
 
       await db("payments_outbox").where({ id: event.id }).update({ status: "PROCESSED" });

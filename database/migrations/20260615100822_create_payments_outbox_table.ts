@@ -6,13 +6,10 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable("payments_outbox", (table) => {
     table.uuid("id").primary();
     // table.string("event_type").notNullable().checkIn(["CREATE_PAYMENT_FAILED", "REFUND_PAYMENT"]);
+    table.string("job_id").nullable(); // Store the BullMQ job ID for tracking
     table.string("event_type").notNullable();
     table.jsonb("payload").notNullable();
-    table
-      .string("status")
-      .notNullable()
-      .defaultTo("PENDING")
-      .checkIn(["PENDING", "PROCESSED", "FAILED"]);
+    table.string("status").notNullable().defaultTo("PENDING").checkIn(["PENDING", "PROCESSED", "FAILED"]);
     // table.integer("retries").notNullable().defaultTo(0);
     table.timestamp("created_at").defaultTo(knex.fn.now()).notNullable();
     table.timestamp("next_retry_at").defaultTo(knex.fn.now()).notNullable();
