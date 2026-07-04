@@ -3,6 +3,7 @@ import morgan from "morgan";
 import concertRoutes from "./routes/concert.routes.js";
 import organizerRoutes from "./routes/organizer.routes.js";
 import internalRoutes from "./routes/internnal.routes.js";
+import staffRoutes from "./routes/staff.routes.js";
 import { createConcertWorker } from "./workers/concert.worker.js";
 
 const app = express();
@@ -26,6 +27,7 @@ app.get("/api/v1/health", healthHandler);
 app.use("/", concertRoutes);
 app.use("/internal", internalRoutes);
 app.use("/organizer", organizerRoutes);
+app.use("/staff", staffRoutes);
 
 app.use((req, res) => {
   console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);

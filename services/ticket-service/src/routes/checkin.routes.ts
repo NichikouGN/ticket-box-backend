@@ -7,7 +7,7 @@ import { CheckinController } from "../controller/checkin.controller.js";
 const router = Router();
 
 router.use(authMiddleware);
-router.use(rbacMiddleware(["STAFF", "ORGANIZER"]));
+router.use(rbacMiddleware(["STAFF"]));
 
 router.get("/public-key", TicketController.getPublicKey);
 router.post("/verify", CheckinController.verifyTicket);

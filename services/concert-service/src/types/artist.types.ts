@@ -37,6 +37,17 @@ export const pdfUploadSchema = z.object({
   }),
 });
 
+export const csvUploadSchema = z.object({
+  file: z.object({
+    fieldname: z.string(),
+    originalname: z.string(),
+    encoding: z.string(),
+    mimetype: z.literal("text/csv", "Only CSV files are allowed"),
+    buffer: z.instanceof(Buffer),
+    size: z.number().max(5 * 1024 * 1024, "File size must be less than 5MB"),
+  }),
+});
+
 export const AIResponseSchema = z.object({
   matchedArtists: z.array(
     z.object({

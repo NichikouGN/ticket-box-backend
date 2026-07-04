@@ -32,6 +32,17 @@ npm run dev
 
 ## 4. Version
 
+### v0.7.0: CSV Import for VIP Guests (2026-07-05)
+
+#### New additions
+
+- Added a new endpoint to import VIP guests from a CSV file for a specific concert, get a list of VIP guests.
+- Added a new staff route within concert service to handle check-in for VIP guests.
+
+#### Changes
+
+- Remove Organizer from being able to check-in in ticket service.
+
 ### v0.6.3: Explicit BullMQ Job Id changes (2026-07-04)
 
 #### Changes

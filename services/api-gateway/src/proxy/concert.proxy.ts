@@ -21,3 +21,11 @@ export const organizerArtistProxy = createProxyMiddleware({
     "^/": "organizer/artists/",
   },
 });
+
+export const staffVipProxy = createProxyMiddleware({
+  target: SERVICES.CONCERT,
+  changeOrigin: true,
+  pathRewrite: {
+    "^/": "staff/concerts/",
+  },
+});

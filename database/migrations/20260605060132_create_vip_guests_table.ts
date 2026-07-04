@@ -14,20 +14,19 @@ export async function up(knex: Knex): Promise<void> {
 
     table.text("sponsor").notNullable();
 
-    table.text("ticket_type").notNullable().checkIn(["GA", "VIP", "SVIP", "CAT1", "CAT2"]);
-
-    table.uuid("ticket_id").nullable().references("id").inTable("tickets").onDelete("SET NULL");
+    // table.text("ticket_type").notNullable().checkIn(["GA", "VIP", "SVIP", "CAT1", "CAT2"]);
+    // table.uuid("ticket_id").nullable().references("id").inTable("tickets").onDelete("SET NULL");
 
     table.timestamp("imported_at", { useTz: true }).defaultTo(knex.fn.now());
-
     table.timestamp("updated_at", { useTz: true }).defaultTo(knex.fn.now());
+    table.timestamp("checked_in_at", { useTz: true }).nullable();
 
     // unique constraint: prevent duplicate VIP entries per concert
     table.unique(["concert_id", "email"], "uq_vip_guests_concert_email");
 
     table.index("concert_id", "idx_vip_guests_concert_id");
     table.index("email", "idx_vip_guests_email");
-    table.index("ticket_id", "idx_vip_guests_ticket_id");
+    // table.index("ticket_id", "idx_vip_guests_ticket_id");
   });
 }
 

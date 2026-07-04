@@ -46,6 +46,11 @@ export const updateConcertStatusSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED"]),
 });
 
+export const vipCheckInParamSchema = z.object({
+  vipGuestId: z.string().uuid(),
+  concertId: z.string().uuid(),
+});
+
 export type CreateConcertInput = z.infer<typeof createConcertSchema>;
 export type UpdateConcertInput = z.infer<typeof updateConcertSchema>;
 export type TicketTypeInput = z.infer<typeof ticketTypeSchema>;
