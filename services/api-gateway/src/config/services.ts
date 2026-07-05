@@ -1,12 +1,11 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 export const SERVICES = {
-  USER: "http://localhost:3001",
-  ORGANIZER: "http://localhost:3002",
-  CONCERT: "http://localhost:3003",
-  ORDER: "http://localhost:3004",
-  PAYMENT: "http://localhost:3005",
-  TICKET: "http://localhost:3006",
-  NOTIFICATION: "http://localhost:3007",
-  AI_BIO: "http://localhost:3008",
-  CSV: "http://localhost:3009",
-  CHECKIN: "http://localhost:3010",
+  USER: process.env.USER_SERVICE_URL || "http://localhost:3001",
+  CONCERT: process.env.CONCERT_SERVICE_URL || "http://localhost:3002",
+  ORDER: process.env.ORDER_SERVICE_URL || "http://localhost:3003",
+  PAYMENT: process.env.PAYMENT_SERVICE_URL || "http://localhost:3004",
+  TICKET: process.env.TICKET_SERVICE_URL || "http://localhost:3005",
+  NOTIFICATION: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:3006",
 };

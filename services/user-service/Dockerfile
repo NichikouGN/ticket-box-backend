@@ -1,0 +1,16 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY services/user-service/package.json ./services/user-service/package.json
+
+RUN npm ci
+
+COPY . .
+
+WORKDIR /app/services/user-service
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

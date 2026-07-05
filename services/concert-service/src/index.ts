@@ -5,9 +5,12 @@ import organizerRoutes from "./routes/organizer.routes.js";
 import internalRoutes from "./routes/internnal.routes.js";
 import staffRoutes from "./routes/staff.routes.js";
 import { createConcertWorker } from "./workers/concert.worker.js";
+import dotenv from "dotenv";
+import { redis, waitForRedisReady } from "./clients/redis.client.js";
+dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT || 3003);
+const PORT = Number(process.env.PORT || 3002);
 
 app.use(morgan("dev"));
 app.use(express.json());
@@ -33,6 +36,8 @@ app.use((req, res) => {
   console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);
   res.status(404).json({ success: false, message: "Not Found" });
 });
+
+await waitForRedisReady(redis);
 
 app.listen(PORT, async () => {
   await createConcertWorker();

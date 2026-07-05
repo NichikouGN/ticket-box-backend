@@ -2,11 +2,13 @@ import express from "express";
 import morgan from "morgan";
 import { createNotificationWorker } from "./workers/notification.worker.js";
 import notificationRoutes from "./routes/notification.route.js";
-import { Redis } from "ioredis";
 import type { Response } from "express";
+import dotenv from "dotenv";
+import { redis, waitForRedisReady } from "./clients/redis.client.js";
+dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT || 3007);
+const PORT = Number(process.env.PORT || 3006);
 
 app.use(morgan("dev"));
 
@@ -23,7 +25,9 @@ const healthHandler = (req: express.Request, res: express.Response) => {
 };
 
 export const activeSSEConnections = new Map<string, Response>();
-const redisSubcriber = new Redis("redis://localhost:6379");
+
+await waitForRedisReady(redis);
+const redisSubcriber = redis.duplicate();
 
 redisSubcriber.subscribe("notification_updates", (err) => {
   if (err) {

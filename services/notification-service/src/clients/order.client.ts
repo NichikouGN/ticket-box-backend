@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const orderClient = axios.create({
-  baseURL: (process.env.ORDER_SERVICE_URL || "http://localhost:3004") + "/internal",
+  baseURL: (process.env.ORDER_SERVICE_URL || "http://localhost:3003") + "/internal",
 });
 
 orderClient.interceptors.request.use((config) => {

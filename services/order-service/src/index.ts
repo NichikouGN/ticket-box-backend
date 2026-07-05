@@ -1,13 +1,15 @@
 import express from "express";
 import morgan from "morgan";
 import orderRoutes from "./routes/order.routes.js";
-import { getRedisHealth } from "./clients/redis.client.js";
-import { Redis } from "ioredis";
+import { getRedisHealth, waitForRedisReady } from "./clients/redis.client.js";
+import { redis } from "./clients/redis.client.js";
 import type { Response } from "express";
 import { createOrderWorker } from "./workers/order.worker.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT || 3004);
+const PORT = Number(process.env.PORT || 3003);
 
 app.use(morgan("dev"));
 app.use(express.json());
@@ -30,11 +32,13 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Not Found" });
 });
 
+await waitForRedisReady(redis);
+
 export const paymentUrlConnections = new Map<string, Response>();
 export const orderConfirmConnections = new Map<string, Response>();
 
-const paymentSubscriber = new Redis("redis://localhost:6379");
-const orderConfirmSubscriber = new Redis("redis://localhost:6379");
+const paymentSubscriber = redis.duplicate();
+const orderConfirmSubscriber = redis.duplicate();
 
 paymentSubscriber.subscribe("payment_url_updates", (err) => {
   if (err) {

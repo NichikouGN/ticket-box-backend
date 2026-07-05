@@ -41,6 +41,7 @@ export const createOrder = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (error) {
+    console.error(error, "[CONTROLLER] Error creating order:");
     if (error instanceof AppError) {
       return res.status(error.statusCode).json({ success: false, message: error.message });
     }
