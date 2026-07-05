@@ -10,7 +10,6 @@ export const createOrderSchema = z.object({
   userId: z.string().uuid(),
   amount: z.coerce.number().int().positive(),
   paymentMethod: paymentMethodSchema,
-  // idempotencyKey: z.string().min(1),
 });
 
 export const createPaymentSchema = z.object({
@@ -18,7 +17,6 @@ export const createPaymentSchema = z.object({
   userId: z.string().uuid(),
   amount: z.coerce.number().int().positive(),
   paymentMethod: paymentMethodSchema,
-  // idempotencyKey: z.string().min(1),
 });
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 

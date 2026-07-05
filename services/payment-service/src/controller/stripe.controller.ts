@@ -6,15 +6,11 @@ import { StripeService } from "../services/stripe.service.js";
 import { AppError } from "../types/appError.types.js";
 dotenv.config();
 
-export const logPaymentEvent = async (req: Request, res: Response) => {
+export const handleWebhook = async (req: Request, res: Response) => {
   const sig = req.headers["stripe-signature"] as string;
 
   try {
-    const event: Stripe.Event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!,
-    );
+    const event: Stripe.Event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
     await StripeService.handleWebhookEvent(event);
   } catch (err) {
     console.error("Webhook signature verification failed:", err);

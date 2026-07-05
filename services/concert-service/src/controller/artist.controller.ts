@@ -10,7 +10,7 @@ import {
   pdfUploadSchema,
 } from "../types/artist.types.js";
 
-export const OrganizerArtistController = {
+export const ArtistController = {
   async createArtists(req: Request, res: Response) {
     try {
       const parsedBody = createArtistsSchema.safeParse(req.body);

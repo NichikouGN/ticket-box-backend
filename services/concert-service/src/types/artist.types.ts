@@ -1,4 +1,3 @@
-import { buffer } from "stream/consumers";
 import { z } from "zod";
 
 export const createArtistsSchema = z.object({
@@ -34,17 +33,6 @@ export const pdfUploadSchema = z.object({
         }
       })
       .pipe(z.array(z.string().uuid("Each artist ID must be a valid UUID"))),
-  }),
-});
-
-export const csvUploadSchema = z.object({
-  file: z.object({
-    fieldname: z.string(),
-    originalname: z.string(),
-    encoding: z.string(),
-    mimetype: z.literal("text/csv", "Only CSV files are allowed"),
-    buffer: z.instanceof(Buffer),
-    size: z.number().max(5 * 1024 * 1024, "File size must be less than 5MB"),
   }),
 });
 

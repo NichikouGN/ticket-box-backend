@@ -32,7 +32,19 @@ npm run dev
 
 ## 4. Version
 
-### v0.7.0: CSV Import for VIP Guests (2026-07-05)
+### v0.7.1: File Cleanup (2026-07-05)
+
+#### New additions
+
+- Added a route for staff to get a list of VIP guests for a specific concert.
+
+#### Changes
+
+- Renamed some organizer controller to be more simple
+- Move some zod validation schema to their own files
+- Removed some unused file.
+
+### v0.7.0: CSV Import for VIP Guests (2026-07-04)
 
 #### New additions
 

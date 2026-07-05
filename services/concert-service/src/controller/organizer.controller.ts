@@ -8,7 +8,7 @@ import {
 } from "../types/concert.types.js";
 import { OrganizerConcertService } from "../services/organizerConcert.service.js";
 
-export const OrganizerConcertController = {
+export const OrganizerController = {
   async createConcert(req: Request, res: Response) {
     try {
       const parsedBody = createConcertSchema.safeParse(req.body);

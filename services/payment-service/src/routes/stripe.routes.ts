@@ -1,7 +1,7 @@
 import express from "express";
-import { logPaymentEvent } from "../controller/stripe.controller.js";
+import { handleWebhook } from "../controller/stripe.controller.js";
 const router = express.Router();
 
-router.post("/", logPaymentEvent);
+router.post("/", handleWebhook);
 
 export default router;

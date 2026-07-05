@@ -23,22 +23,22 @@ export const OutboxRepository = {
     );
   },
 
-  async getPendingOutboxEvents(db: DB, limit: number): Promise<OutboxEventType[]> {
-    const events = await db("payments_outbox")
-      .where("status", "PENDING")
-      .where("next_retry_at", "<=", db.fn.now())
-      .orderBy("next_retry_at", "asc")
-      .limit(limit)
-      .forUpdate()
-      .skipLocked();
+  // async getPendingOutboxEvents(db: DB, limit: number): Promise<OutboxEventType[]> {
+  //   const events = await db("payments_outbox")
+  //     .where("status", "PENDING")
+  //     .where("next_retry_at", "<=", db.fn.now())
+  //     .orderBy("next_retry_at", "asc")
+  //     .limit(limit)
+  //     .forUpdate()
+  //     .skipLocked();
 
-    return events.map((event) => ({
-      id: event.id,
-      eventType: event.event_type,
-      payload: JSON.parse(event.payload),
-      status: event.status,
-      nextRetryAt: event.next_retry_at,
-      createdAt: event.created_at,
-    }));
-  },
+  //   return events.map((event) => ({
+  //     id: event.id,
+  //     eventType: event.event_type,
+  //     payload: JSON.parse(event.payload),
+  //     status: event.status,
+  //     nextRetryAt: event.next_retry_at,
+  //     createdAt: event.created_at,
+  //   }));
+  // },
 };

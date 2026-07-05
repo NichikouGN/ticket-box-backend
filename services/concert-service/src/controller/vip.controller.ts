@@ -1,10 +1,10 @@
-import { concertIdParamSchema, listQuerySchema, vipCheckInParamSchema } from "../types/concert.types.js";
+import { concertIdParamSchema, listQuerySchema } from "../types/concert.types.js";
 import type { Request, Response } from "express";
 import { AppError } from "../types/appError.types.js";
 import { OrganizerVipService } from "../services/organizerVip.service.js";
-import { csvUploadSchema } from "../types/artist.types.js";
+import { csvUploadSchema, vipCheckInParamSchema } from "../types/vip.types.js";
 
-export const OrganizerVipController = {
+export const VipController = {
   async importVipGuests(req: Request, res: Response) {
     try {
       console.log(`Received request to import VIP guests for concert ID: ${req.params.concertId}`);
