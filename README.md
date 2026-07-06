@@ -1,36 +1,51 @@
 # Ticket Box Backend
 
-## 1. Introduction
+This is the backend for Ticket Box, a ticketing platform that allows users to browse and purchase tickets for concerts and events. The backend is built using Node.js, Express, and PostgreSQL, and is designed to be scalable and maintainable.
 
-## 2. Collaborators
+## Table of Contents
 
-## 3. How to setup
+- [Quick Start](#quick-start)
+- [Full Installation Guide](#full-installation-guide)
+- [Changelog](#changelog)
 
-1. Open up the terminal and type in
+## Quick Start
 
-```bash
-git clone https://github.com/NichikouGN/happy-recipe-frontend.git
-```
-
-2. After that, run
+In order to run the backend, do the following steps:
 
 ```bash
-npm install
-```
-
-3. Change the .env file to point to the backend
-
-```js
-VITE_API_URL = "http://localhost:4000"; //default
-```
-
-4. Start up the server
-
-```bash
+git clone git@github.com:NichikouGN/ticket-box-backend.git
+cd ticket-box-backend
 npm run dev
 ```
 
-## 4. Version
+## Full Installation Guide
+
+For the full installation guide, please refer to the [Installation Guide](docs/installation.md).
+For starting the application, please refer to the [Getting Started](docs/getting-started.md) guide.
+
+## Changelog
+
+### v0.8.0: Load Balancing and Token Bucket (2026-07-06)
+
+#### New additions
+
+- Added all services to docker-compose.yml to run inside docker.
+- Added Dockerfile to all services to build docker images.
+- Added k8s deployment and service yaml files to deploy all services to k8s cluster.
+- Added kind-config.yml for forwarding ports from host machine to kind cluster.
+- Added load-env.sh adn load-images.sh to help with loading env variables and docker images to kind cluster.
+- Added Makefile to help with running commands to start.
+- Application can now be run in a local k8s cluster using kind to run replicas with load balancing.
+- Added Token Bucket algorithm to api gateway to limit the number of requests per user IP address.
+
+#### Changes
+
+- Used .env for hostname and port instead of fixed values.
+- Refactor majority of package.json to align with docker usage.
+
+#### Fixes
+
+- Fixed additional quotation marks in .env files that caused issues with kubernetes.
 
 ### v0.7.1: File Cleanup (2026-07-05)
 

@@ -27,6 +27,8 @@ spec:
           env:
             - name: SERVICE_NAME
               value: "api-gateway"
+            - name: REDIS_URL
+              value: "redis://redis:6379"
             - name: PORT
               value: "3000"
             - name: USER_SERVICE_URL

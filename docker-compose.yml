@@ -34,6 +34,7 @@ services:
     environment:
       - SERVICE_NAME=api-gateway
       - PORT=3000
+      - REDIS_URL=redis://redis:6379
       - USER_SERVICE_URL=http://user-service:3000
       - CONCERT_SERVICE_URL=http://concert-service:3000
       - ORDER_SERVICE_URL=http://order-service:3000

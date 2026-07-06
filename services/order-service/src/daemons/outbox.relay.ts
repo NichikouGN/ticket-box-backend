@@ -24,21 +24,6 @@ async function startOutboxRelay() {
     process.exit(1);
   });
 
-  console.log("Connecting to Postgres for Order Outbox Relay...");
-  console.log(client.host, client.port, client.database, client.user, client.database, client.password);
-
-  const db_string = JSON.stringify(process.env.DB_URL);
-  console.log("DB_URL:", db_string);
-
-  const url = new URL(process.env.DB_URL!);
-  console.log("Parsed DB URL:", {
-    host: url.hostname,
-    port: url.port,
-    database: url.pathname.slice(1),
-    user: url.username,
-    password: url.password,
-  });
-
   await client.connect();
 
   console.log("Connected to Postgres. Listening for outbox events...");
