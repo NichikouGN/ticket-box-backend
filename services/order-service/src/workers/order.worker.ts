@@ -64,5 +64,3 @@ export const createOrderWorker = async () => {
     logger.error({ error }, "[Worker - createOrderWorker] Order worker error");
   });
 };
-
-createOrderWorker();

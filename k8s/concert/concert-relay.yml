@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: concert-relay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: concert-relay
+  template:
+    metadata:
+      labels:
+        app: concert-relay
+    spec:
+      containers:
+        - name: concert-relay
+          image: ticket-box-backend-concert-relay:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          args: ["npx", "tsx", "src/daemons/outbox.relay.ts"]
+          envFrom:
+            - secretRef:
+                name: concert-service-env
+          env:
+            - name: SERVICE_NAME
+              value: "concert-relay"
+            - name: PORT
+              value: "3000"
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: concert-relay
+spec:
+  type: ClusterIP
+  selector:
+    app: concert-relay
+  ports:
+    - port: 3000
+      targetPort: 3000

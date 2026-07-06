@@ -63,12 +63,12 @@ services:
     build:
       context: .
       dockerfile: services/concert-service/Dockerfile
+    env_file:
+      - services/concert-service/.env
     environment:
       - SERVICE_NAME=concert-service
       - PORT=3000
       - REDIS_URL=redis://redis:6379
-    env_file:
-      - services/concert-service/.env
     depends_on:
       redis:
         condition: service_healthy
@@ -80,6 +80,12 @@ services:
       context: .
       dockerfile: services/concert-service/Dockerfile
     command: npm run relay
+    env_file:
+      - services/concert-service/.env
+    environment:
+      - SERVICE_NAME=concert-relay
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
     depends_on:
       redis:
         condition: service_healthy
@@ -90,6 +96,8 @@ services:
     build:
       context: .
       dockerfile: services/order-service/Dockerfile
+    env_file:
+      - services/order-service/.env
     environment:
       - SERVICE_NAME=order-service
       - REDIS_URL=redis://redis:6379
@@ -97,8 +105,6 @@ services:
       - CONCERT_SERVICE_URL=http://concert-service:3000
       - PAYMENT_SERVICE_URL=http://payment-service:3000
       - PORT=3000
-    env_file:
-      - services/order-service/.env
     depends_on:
       redis:
         condition: service_healthy
@@ -110,6 +116,15 @@ services:
       context: .
       dockerfile: services/order-service/Dockerfile
     command: npm run relay
+    env_file:
+      - services/order-service/.env
+    environment:
+      - SERVICE_NAME=order-relay
+      - REDIS_URL=redis://redis:6379
+      - USER_SERVICE_URL=http://user-service:3000
+      - CONCERT_SERVICE_URL=http://concert-service:3000
+      - PAYMENT_SERVICE_URL=http://payment-service:3000
+      - PORT=3000
     depends_on:
       redis:
         condition: service_healthy
@@ -121,6 +136,15 @@ services:
       context: .
       dockerfile: services/order-service/Dockerfile
     command: npm run cron
+    env_file:
+      - services/order-service/.env
+    environment:
+      - SERVICE_NAME=order-cron
+      - REDIS_URL=redis://redis:6379
+      - USER_SERVICE_URL=http://user-service:3000
+      - CONCERT_SERVICE_URL=http://concert-service:3000
+      - PAYMENT_SERVICE_URL=http://payment-service:3000
+      - PORT=3000
     depends_on:
       redis:
         condition: service_healthy
@@ -133,12 +157,12 @@ services:
       dockerfile: services/payment-service/Dockerfile
     ports:
       - "3004:3000"
+    env_file:
+      - services/payment-service/.env
     environment:
       - SERVICE_NAME=payment-service
       - REDIS_URL=redis://redis:6379
       - PORT=3000
-    env_file:
-      - services/payment-service/.env
     depends_on:
       redis:
         condition: service_healthy
@@ -150,6 +174,12 @@ services:
       context: .
       dockerfile: services/payment-service/Dockerfile
     command: npm run relay
+    env_file:
+      - services/payment-service/.env
+    environment:
+      - SERVICE_NAME=payment-relay
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
     depends_on:
       redis:
         condition: service_healthy
@@ -161,6 +191,12 @@ services:
       context: .
       dockerfile: services/payment-service/Dockerfile
     command: npm run cron
+    env_file:
+      - services/payment-service/.env
+    environment:
+      - SERVICE_NAME=payment-cron
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
     depends_on:
       redis:
         condition: service_healthy
@@ -187,13 +223,13 @@ services:
     build:
       context: .
       dockerfile: services/notification-service/Dockerfile
+    env_file:
+      - services/notification-service/.env
     environment:
       - SERVICE_NAME=notification-service
       - REDIS_URL=redis://redis:6379
       - ORDER_SERVICE_URL=http://order-service:3000
       - PORT=3000
-    env_file:
-      - services/notification-service/.env
     depends_on:
       redis:
         condition: service_healthy
@@ -205,6 +241,12 @@ services:
       context: .
       dockerfile: services/notification-service/Dockerfile
     command: npm run relay
+    env_file:
+      - services/notification-service/.env
+    environment:
+      - SERVICE_NAME=notification-relay
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
     depends_on:
       redis:
         condition: service_healthy
@@ -216,6 +258,12 @@ services:
       context: .
       dockerfile: services/notification-service/Dockerfile
     command: npm run cron:notification
+    env_file:
+      - services/notification-service/.env
+    environment:
+      - SERVICE_NAME=notification-cron
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
     depends_on:
       redis:
         condition: service_healthy
@@ -227,6 +275,12 @@ services:
       context: .
       dockerfile: services/notification-service/Dockerfile
     command: npm run cron:reminder
+    env_file:
+      - services/notification-service/.env
+    environment:
+      - SERVICE_NAME=reminder-cron
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
     depends_on:
       redis:
         condition: service_healthy

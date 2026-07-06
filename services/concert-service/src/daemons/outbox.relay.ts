@@ -17,7 +17,7 @@ async function startOutboxRelay() {
   });
 
   client.on("error", (err) => {
-    logger.error({ err }, "Outbox Relay Postgres Link Crashed:");
+    console.error("Outbox Relay Postgres Link Crashed:", err);
     process.exit(1);
   });
 
@@ -57,6 +57,7 @@ async function startOutboxRelay() {
 }
 
 startOutboxRelay().catch((err) => {
-  logger.error({ err }, "[CONCERT OUTBOX] Error starting outbox relay");
+  console.error("Error starting Concert Outbox Relay:", err);
+  console.log(process.env.DB_URL);
   process.exit(1);
 });
