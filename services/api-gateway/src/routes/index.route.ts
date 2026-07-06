@@ -32,7 +32,7 @@ const concertLimiter = createTokenBucket({
 
 const orderLimiter = createTokenBucket({
   capacity: 10,
-  refillRate: 2,
+  refillRate: 1,
   prefix: "order",
   getKey: (req: Request) => req.ip,
 });

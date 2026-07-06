@@ -35,8 +35,35 @@ For starting the application, please refer to the [Getting Started](docs/getting
 - Added kind-config.yml for forwarding ports from host machine to kind cluster.
 - Added load-env.sh adn load-images.sh to help with loading env variables and docker images to kind cluster.
 - Added Makefile to help with running commands to start.
-- Application can now be run in a local k8s cluster using kind to run replicas with load balancing.
+- Application can now be run in a local k8s cluster using kind to run replicas with load balancing with these configs
+  |Service|Replicas|Exposed Port|Node Port|Service Port|
+  |---|---|---|---|---|
+  |redis|1|X|X|6379|
+  |redisinsight|1|5540|30554|5540|
+  |api-gateway|2|3000|30000|3000|
+  |concert-service|2|X|X|3000|
+  |concert-relay|1|X|X|3000|
+  |order-service|2|X|X|3000|
+  |order-relay|1|X|X|3000|
+  |order-cron|1|X|X|3000|
+  |payment-service|2|3004|30040|3000|
+  |payment-relay|1|X|X|3000|
+  |payment-cron|1|X|X|3000|
+  |notification-service|2|X|X|3000|
+  |notification-relay|1|X|X|3000|
+  |notification-cron|1|X|X|3000|
+  |reminder-cron|1|X|X|3000|
+  |ticket-service|2|X|X|3000|
 - Added Token Bucket algorithm to api gateway to limit the number of requests per user IP address.
+  |Group|Capacity|Refill Rate|Refill Interval|
+  |---|---|---|---|
+  |Auth|5|0.1t/s|10s|
+  |User|40|2t/s|0.5s|
+  |Concert|40|2t/s|0.5s|
+  |Order|10|1t/s|1s|
+  |Ticket|200|25t/s|0.4s|
+  |Organizer|120|12t/s|0.83s|
+  |Notification|60|5t/s|0.2s|
 
 #### Changes
 
