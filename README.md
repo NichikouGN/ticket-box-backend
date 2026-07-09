@@ -25,6 +25,27 @@ For starting the application, please refer to the [Getting Started](docs/getting
 
 ## Changelog
 
+### v0.8.1: Minor Changes & Fixes (2026-07-09)
+
+#### New additions
+
+- Added an internal get ticket name route into concert service to get ticket name by ticketTypeId.
+- Added pagination to getTickets endpoint in Ticket Service to return paginated results with meta information.
+- Added missing field for getTickets endpoint in Ticket Service to return ticketName and concert info for each ticket.
+- Added missing name field for get Concert Tickets in Ticket Service.
+- Added missing id for VIP guest for get VIP by concert ID endpoint in Concert Service.
+- Added Concert Client for Ticket Service to fetch concert and ticket details from Concert Service.
+
+#### Changes
+
+- Changed Stripe callback on success to include orderId in query params to allow frontend to fetch order confirmation after payment is completed.
+- Changed artist in get concert detail from name array to an array of objects containing id, name and verifiedBio.
+
+#### Fixes
+
+- Fixed rate limiter in API Gateway unable to parsed IPv6 address correctly.
+- Fixed redis not exposed to host machine when running in kind cluster, preventing the use of redisinsight.
+
 ### v0.8.0: Load Balancing and Token Bucket (2026-07-06)
 
 #### New additions
@@ -33,12 +54,12 @@ For starting the application, please refer to the [Getting Started](docs/getting
 - Added Dockerfile to all services to build docker images.
 - Added k8s deployment and service yaml files to deploy all services to k8s cluster.
 - Added kind-config.yml for forwarding ports from host machine to kind cluster.
-- Added load-env.sh adn load-images.sh to help with loading env variables and docker images to kind cluster.
+- Added load-env.sh and load-images.sh to help with loading env variables and docker images to kind cluster.
 - Added Makefile to help with running commands to start.
 - Application can now be run in a local k8s cluster using kind to run replicas with load balancing with these configs
   |Service|Replicas|Exposed Port|Node Port|Service Port|
   |---|---|---|---|---|
-  |redis|1|X|X|6379|
+  |redis|1|6379|30637|6379|
   |redisinsight|1|5540|30554|5540|
   |api-gateway|2|3000|30000|3000|
   |concert-service|2|X|X|3000|

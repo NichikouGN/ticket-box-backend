@@ -99,7 +99,7 @@ export const NotificationController = {
         res.write(`event: TIMEOUT\n`);
         res.write(`data: {}\n\n`);
         res.end();
-      }, 120000);
+      }, 120_000);
 
       req.on("close", () => {
         clearInterval(keepAliveInterval);

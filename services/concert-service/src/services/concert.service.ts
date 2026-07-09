@@ -20,6 +20,7 @@ import {
   safeRedisHGetAll,
   deleteKeysByPattern,
 } from "../utils/redis.utils.js";
+import { ArtistRepository } from "../repository/artist.repository.js";
 
 const LIST_CACHE_TTL_SECONDS = 30 * 60;
 const DETAIL_CACHE_TTL_SECONDS = 30 * 60;
@@ -48,20 +49,23 @@ const toListItem = (row: Record<string, unknown>): ConcertListItem => ({
   coverImage: row.cover_image ? String(row.cover_image) : null,
 });
 
-const toDetail = (row: Record<string, unknown>): ConcertDetail => ({
-  id: String(row.id),
-  title: String(row.title),
-  description: row.description ? String(row.description) : null,
-  artists: Array.isArray(row.artists) ? row.artists.map(String) : [],
-  venue: String(row.venue),
-  eventDate: new Date(String(row.event_date)).toISOString(),
-  coverImage: row.cover_image ? String(row.cover_image) : null,
-  seatMapSvg: row.seat_map_svg_url ? String(row.seat_map_svg_url) : null,
-});
+// const toDetail = (row: Record<string, unknown>): ConcertDetail => ({
+//   id: String(row.id),
+//   title: String(row.title),
+//   description: row.description ? String(row.description) : null,
+//   venue: String(row.venue),
+//   eventDate: new Date(String(row.event_date)).toISOString(),
+//   coverImage: row.cover_image ? String(row.cover_image) : null,
+//   seatMapSvg: row.seat_map_svg_url ? String(row.seat_map_svg_url) : null,
+// });
 
 export const ConcertService = {
   async getHealth() {
     return { redis: getRedisHealth() };
+  },
+  async getTicketNameByType(ticketTypeId: string, organizerId?: string) {
+    const ticketDetail = await ConcertRepository.getTicketNameByType(ticketTypeId);
+    return ticketDetail;
   },
 
   async listConcerts(page: number, limit: number, organizerId?: string) {
@@ -138,7 +142,16 @@ export const ConcertService = {
       throw new AppError("Concert not found", 404);
     }
 
-    const payload = toDetail(concert as Record<string, unknown>);
+    const artistsInfo = await ArtistRepository.getArtistDetailByConcertId(concertId);
+
+    const payload = {
+      ...concert,
+      artists: artistsInfo.map((artist) => ({
+        id: artist.id,
+        name: artist.name,
+        verifiedBio: artist.verifiedBio,
+      })),
+    };
 
     if (useCache) {
       await safeRedisSet(key, JSON.stringify(payload), DETAIL_CACHE_TTL_SECONDS);

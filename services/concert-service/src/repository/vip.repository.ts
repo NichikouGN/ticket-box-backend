@@ -55,7 +55,9 @@ export const VipRepository = {
     concertId: string,
     offset: number,
     limit: number,
-  ): Promise<{ fullName: string; email: string; sponsor: string; concertId: string; checkedInAt: Date | null }[]> {
+  ): Promise<
+    { id: string; fullName: string; email: string; sponsor: string; concertId: string; checkedInAt: Date | null }[]
+  > {
     try {
       const vipGuests = await db("vip_guests")
         .where("concert_id", concertId)
@@ -64,6 +66,7 @@ export const VipRepository = {
         .orderBy("imported_at", "desc");
 
       return vipGuests.map((guest) => ({
+        id: guest.id,
         fullName: guest.full_name,
         email: guest.email,
         sponsor: guest.sponsor,

@@ -95,7 +95,7 @@ export const streamPaymentUrl = async (req: Request, res: Response) => {
     res.write(`event: TIMEOUT\n`);
     res.write(`data: {}\n\n`);
     res.end();
-  }, 120000);
+  }, 120_000);
 
   req.on("close", () => {
     clearInterval(keepAliveInterval);
@@ -143,7 +143,7 @@ export const streamOrderConfirm = async (req: Request, res: Response) => {
     res.write(`event: TIMEOUT\n`);
     res.write(`data: {}\n\n`);
     res.end();
-  }, 120000);
+  }, 120_000);
 
   req.on("close", () => {
     clearInterval(keepAliveInterval);

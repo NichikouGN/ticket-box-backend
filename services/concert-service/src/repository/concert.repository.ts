@@ -20,6 +20,13 @@ const artistAggregation = db.raw(
 );
 
 export const ConcertRepository = {
+  async getTicketNameByType(ticketTypeId: string): Promise<{
+    id: string;
+    name: string;
+  } | null> {
+    return await db("ticket_types").select("id", "name").where("id", ticketTypeId).first();
+  },
+
   async updateConcert(db: DB, concertId: string, concert: UpdateConcertInput) {
     const updateData: Record<string, any> = {};
 
@@ -106,18 +113,16 @@ export const ConcertRepository = {
     id: string;
     title: string;
     description: string | null;
-    artist: string;
     venue: string;
-    event_date: Date;
-    cover_image: string | null;
-    seat_map_svg_url: string | null;
+    eventDate: Date;
+    coverImage: string | null;
+    seatMapSvg: string | null;
     status: "DRAFT" | "PUBLISHED" | "CANCELLED";
-    artists: string[];
   } | null> {
-    return db("concerts as c")
+    const concert = await db("concerts as c")
       .leftJoin("concerts_artists as ca", "ca.concert_id", "c.id")
       .leftJoin("artists as a", "a.id", "ca.artist_id")
-      .select([...concertColumns, artistAggregation])
+      .select([...concertColumns])
       .where("c.id", concertId)
       .groupBy(
         "c.id",
@@ -130,6 +135,19 @@ export const ConcertRepository = {
         "c.status",
       )
       .first();
+    if (!concert) {
+      return null;
+    }
+    return {
+      id: concert.id,
+      title: concert.title,
+      description: concert.description,
+      venue: concert.venue,
+      eventDate: new Date(concert.event_date),
+      coverImage: concert.cover_image,
+      seatMapSvg: concert.seat_map_svg_url,
+      status: concert.status as "DRAFT" | "PUBLISHED" | "CANCELLED",
+    };
   },
 
   async getTicketTypes(concertId: string): Promise<

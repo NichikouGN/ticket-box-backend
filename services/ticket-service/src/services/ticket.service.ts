@@ -3,6 +3,7 @@ import db from "../db/knex.js";
 import { AppError } from "../types/appError.types.js";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import { concertClient } from "../clients/concert.client.js";
 
 dotenv.config();
 
@@ -21,12 +22,94 @@ export const TicketService = {
     return PUBLIC_KEY;
   },
 
-  async getTickets(userId?: string) {
+  async getTickets(page: number, limit: number, userId?: string) {
     if (!userId) {
       throw new AppError("User ID is required to fetch tickets.", 400);
     }
-    const tickets = await TicketRepository.findTicketsByUserId(db, userId);
-    return tickets;
+
+    const offset = (page - 1) * limit;
+
+    const [tickets, total] = await Promise.all([
+      TicketRepository.findTicketsByUserId(db, offset, limit, userId),
+      TicketRepository.countTicketsByUserId(db, userId),
+    ]);
+
+    const concertMap = new Map<
+      string,
+      {
+        id: string;
+        title: string;
+        venue: string;
+        eventDate: string;
+      } | null
+    >();
+
+    const ticketMap = new Map<string, string | null>();
+
+    for (const ticket of tickets) {
+      if (!concertMap.has(ticket.concertId)) {
+        concertMap.set(ticket.concertId, null);
+      }
+
+      if (!ticketMap.has(ticket.ticketTypeId)) {
+        ticketMap.set(ticket.ticketTypeId, null);
+      }
+    }
+
+    await Promise.all([
+      await Promise.all(
+        [...ticketMap.keys()].map(async (ticketId) => {
+          try {
+            const response = await concertClient.get(`/concerts/ticket-types/${ticketId}`);
+            const ticketDetails = response.data.data as {
+              id: string;
+              name: string;
+            };
+            ticketMap.set(ticketId, ticketDetails.name);
+          } catch (error) {
+            console.error(`Error fetching ticket details for ticket ID ${ticketId}:`, error);
+            ticketMap.set(ticketId, null);
+          }
+        }),
+      ),
+
+      await Promise.all(
+        [...concertMap.keys()].map(async (concertId) => {
+          try {
+            const response = await concertClient.get(`/concerts/${concertId}`);
+            const concertDetails = response.data.data;
+            concertMap.set(concertId, {
+              id: concertDetails.id,
+              title: concertDetails.title,
+              venue: concertDetails.venue,
+              eventDate: concertDetails.eventDate,
+            });
+          } catch (error) {
+            console.error(`Error fetching concert details for concert ID ${concertId}:`, error);
+            concertMap.set(concertId, null);
+          }
+        }),
+      ),
+    ]);
+
+    const populatedTickets = tickets.map((ticket) => {
+      const concertDetails = concertMap.get(ticket.concertId);
+      const ticketName = ticketMap.get(ticket.ticketTypeId);
+      return {
+        ...ticket,
+        ticketName: ticketName || null,
+        concertDetails: concertDetails || null,
+      };
+    });
+
+    return {
+      data: populatedTickets,
+      total: {
+        total,
+        page,
+        limit,
+      },
+    };
   },
 
   async getTicketById(ticketId: string): Promise<{
@@ -66,7 +149,40 @@ export const TicketService = {
       throw new AppError("Concert ID is required to fetch tickets.", 400);
     }
     const tickets = await TicketRepository.findTicketsByConcertId(db, concertId);
-    return tickets;
+
+    const ticketMap = new Map<string, string | null>();
+
+    for (const ticket of tickets) {
+      if (!ticketMap.has(ticket.ticketTypeId)) {
+        ticketMap.set(ticket.ticketTypeId, null);
+      }
+    }
+
+    await Promise.all(
+      [...ticketMap.keys()].map(async (ticketId) => {
+        try {
+          const response = await concertClient.get(`/concerts/ticket-types/${ticketId}`);
+          const ticketDetails = response.data.data as {
+            id: string;
+            name: string;
+          };
+          ticketMap.set(ticketId, ticketDetails.name);
+        } catch (error) {
+          console.error(`Error fetching ticket details for ticket ID ${ticketId}:`, error);
+          ticketMap.set(ticketId, null);
+        }
+      }),
+    );
+
+    const populatedTickets = tickets.map((ticket) => {
+      const ticketName = ticketMap.get(ticket.ticketTypeId);
+      return {
+        ...ticket,
+        ticketName: ticketName || null,
+      };
+    });
+
+    return populatedTickets;
   },
 
   async verifyTicket(ticketData: { ticketId: string; userId: string; concertId: string; ticketTypeId: string }) {

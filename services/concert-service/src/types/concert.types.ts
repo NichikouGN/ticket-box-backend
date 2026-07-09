@@ -4,6 +4,10 @@ export const concertIdParamSchema = z.object({
   concertId: z.string().uuid(),
 });
 
+export const ticketTypeIdParamSchema = z.object({
+  ticketTypeId: z.string().uuid(),
+});
+
 export const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),

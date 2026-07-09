@@ -2,8 +2,15 @@ import type { Knex } from "knex";
 
 type DB = Knex | Knex.Transaction;
 export const TicketRepository = {
+  async countTicketsByUserId(db: DB, userId: string): Promise<number> {
+    const result = await db("tickets").where({ user_id: userId }).count<{ count: number }>("id as count").first();
+    return Number(result?.count) || 0;
+  },
+
   async findTicketsByUserId(
     db: DB,
+    offset: number,
+    limit: number,
     userId: string,
   ): Promise<
     {
@@ -17,8 +24,18 @@ export const TicketRepository = {
   > {
     const results = await db("tickets")
       .where({ user_id: userId })
-      .select("id", "concert_id", "ticket_type_id", "status", "created_at", "used_at");
-    return results;
+      .select("id", "concert_id", "ticket_type_id", "status", "created_at", "used_at")
+      .offset(offset)
+      .limit(limit);
+
+    return results.map((ticket) => ({
+      ticketId: ticket.id,
+      concertId: ticket.concert_id,
+      ticketTypeId: ticket.ticket_type_id,
+      status: ticket.status,
+      createdAt: ticket.created_at,
+      usedAt: ticket.used_at,
+    }));
   },
   async findTicketById(
     db: DB,
@@ -67,7 +84,14 @@ export const TicketRepository = {
     const tickets = await db("tickets")
       .where({ concert_id: concertId })
       .select("id", "user_id", "ticket_type_id", "status", "created_at", "used_at");
-    return tickets;
+    return tickets.map((ticket) => ({
+      ticketId: ticket.id,
+      userId: ticket.user_id,
+      ticketTypeId: ticket.ticket_type_id,
+      status: ticket.status,
+      createdAt: ticket.created_at,
+      usedAt: ticket.used_at,
+    }));
   },
 
   async markTicketAsUsed(db: DB, ticketId: string, staffId: string) {

@@ -1,5 +1,5 @@
 build:
-	docker-compose build 
+	docker-compose build --no-cache
 
 create-cluster:
 	kind create cluster --name ticket-box --config kind-config.yml
@@ -27,6 +27,7 @@ get-pods:
 
 start-all:
 	make build
+	make delete-cluster
 	make create-cluster
 	make load-images
 	make load-env
@@ -38,7 +39,8 @@ refresh-all:
 	make build
 	make load-images
 	make load-env
-	make refresh-k8s
+	make delete-k8s
+	make apply-k8s
 	sleep 4
 	make get-pods
 

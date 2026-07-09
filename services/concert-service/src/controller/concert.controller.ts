@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { AppError } from "../types/appError.types.js";
 import { ConcertService } from "../services/concert.service.js";
-import { listQuerySchema, concertIdParamSchema } from "../types/concert.types.js";
+import { listQuerySchema, concertIdParamSchema, ticketTypeIdParamSchema } from "../types/concert.types.js";
 
 export const getHealth = async (_req: Request, res: Response) => {
   const health = await ConcertService.getHealth();
@@ -30,6 +30,26 @@ export const ConcertController = {
       });
     } catch (error) {
       console.error("Error in getConcerts:", error);
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ success: false, message: error.message });
+      }
+
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+  },
+  async getTicketNameByType(req: Request, res: Response) {
+    try {
+      const parsed = ticketTypeIdParamSchema.safeParse(req.params);
+      if (!parsed.success) {
+        return res.status(400).json({ success: false, message: "Invalid ticket type id" });
+      }
+
+      const ticketTypeId = parsed.data.ticketTypeId;
+
+      const result = await ConcertService.getTicketNameByType(ticketTypeId);
+      return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error("Error in getTicketNameByType:", error);
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({ success: false, message: error.message });
       }

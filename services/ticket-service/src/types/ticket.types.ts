@@ -34,6 +34,11 @@ export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 
 export type PaymentStatus = "PROCESSING" | "PENDING_PAYMENT" | "COMPLETED" | "FAILED" | "EXPIRED";
 
+export const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
+
 export type CheckoutSessionResponse = {
   sessionId: string;
   paymentId: string;

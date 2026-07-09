@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { bucketKey, safeRedisHGetAll, safeRedisHSet } from "../utils/redis.utils.js";
+import net from "net";
 
 type TokenBucketConfig = {
   capacity: number;
@@ -8,22 +9,29 @@ type TokenBucketConfig = {
   getKey: (req: Request) => string | undefined;
 };
 
+const normalizeIp = (ip: string): string => {
+  if (ip.startsWith("::ffff:") && net.isIPv4(ip.substring(7))) {
+    return ip.substring(7);
+  }
+
+  if (ip === "::1") {
+    return "127.0.0.1";
+  }
+
+  return ip;
+};
+
 export const createTokenBucket = (config: TokenBucketConfig) => {
   return async function (req: Request, res: Response, next: NextFunction) {
     const userIp = config.getKey(req);
-
     if (!userIp) {
       return res.status(400).json({ success: false, message: "Unable to determine legitimate IP" });
     }
+    const normalizedIp = normalizeIp(userIp);
 
-    const normalizedIp = userIp.slice(7);
-
-    if (!normalizedIp) {
-      return res.status(400).json({ success: false, message: "Unable to determine legitimate IP" });
-    }
+    console.log("Normalized IP:", normalizedIp, "for request from original IP:", userIp);
 
     const key = bucketKey(normalizedIp, config.prefix);
-
     const cache = await safeRedisHGetAll(key);
 
     if (!cache || Object.keys(cache).length === 0) {

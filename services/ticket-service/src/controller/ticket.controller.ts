@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { TicketService } from "../services/ticket.service.js";
 import { AppError } from "../types/appError.types.js";
-import { uuidConcertSchema, uuidTicketSchema } from "../types/ticket.types.js";
+import { listQuerySchema, uuidConcertSchema, uuidTicketSchema } from "../types/ticket.types.js";
 
 export const TicketController = {
   async getPublicKey(req: Request, res: Response) {
@@ -18,10 +18,16 @@ export const TicketController = {
   },
   async getTickets(req: Request, res: Response) {
     try {
-      const userId = req.user?.userId;
-      const tickets = await TicketService.getTickets(userId);
+      const parsedQuery = listQuerySchema.safeParse(req.query);
+      if (!parsedQuery.success) {
+        throw new AppError("Invalid query parameters.", 400);
+      }
+      const { page, limit } = parsedQuery.data;
 
-      return res.status(200).json({ success: true, data: tickets });
+      const userId = req.user?.userId;
+      const result = await TicketService.getTickets(page, limit, userId);
+
+      return res.status(200).json({ success: true, data: result.data, meta: result.total });
     } catch (error) {
       console.error("Error fetching tickets:", error);
       if (error instanceof AppError) {

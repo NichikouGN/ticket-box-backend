@@ -6,6 +6,7 @@ const router = Router();
 
 router.use(internalAuthMiddleware);
 
+router.get("/concerts/ticket-types/:ticketTypeId", ConcertController.getTicketNameByType);
 router.get("/concerts/:concertId/ticket-types", ConcertController.getConcertTickets);
 router.get("/concerts/:concertId/stocks", ConcertController.getConcertStock);
 router.get("/concerts/:concertId", ConcertController.getConcertDetail);

@@ -1,6 +1,20 @@
 import db from "../db/knex.js";
 
 export const ArtistRepository = {
+  async getArtistDetailByConcertId(
+    concertId: string,
+  ): Promise<{ id: string; name: string; verifiedBio: string | null }[]> {
+    const results = await db("artists as a")
+      .join("concerts_artists as ca", "a.id", "ca.artist_id")
+      .where("ca.concert_id", concertId)
+      .select("a.id", "a.name", "ca.verified_bio");
+
+    return results.map((result) => ({
+      id: result.id,
+      name: result.name,
+      verifiedBio: result.verified_bio,
+    }));
+  },
   async findArtistAndConcertById(concertId: string, artistIds: string[]): Promise<string[]> {
     const results = await db("concerts_artists")
       .where({ concert_id: concertId })

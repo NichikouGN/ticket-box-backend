@@ -252,6 +252,7 @@ export const OrderService = {
     orderId: string,
   ): Promise<{ orderId: string; paymentUrl: string; status: string; paymentDeadline: string } | undefined> {
     try {
+      console.log(`[SERVICE] Fetching payment URL for order ID: ${orderId}`);
       const response = await paymentClient.get(`/payments/${orderId}/url`);
       const data = response.data as {
         success: boolean;
