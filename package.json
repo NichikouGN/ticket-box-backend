@@ -7,10 +7,11 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "dev": "concurrently \"npm:dev:gateway\" \"npm:dev:user\" \"npm:dev:concert\" \"npm:dev:order\" \"npm:dev:payment\" \"npm:dev:ticket\" \"npm:dev:notification\"",
+    "dev": "concurrently \"npm:dev:gateway\" \"npm:dev:user\" \"npm:dev:concert\" \"npm:dev:order\" \"npm:dev:payment\" \"npm:dev:ticket\" \"npm:dev:notification\" \"npm:dev:bridge\"",
     "relay": "concurrently \"npm:relay:order\" \"npm:relay:payment\" \"npm:relay:notification\" \"npm:relay:concert\"",
     "cron": "concurrently \"npm:cron:order\" \"npm:cron:payment\" \"npm:cron:notification\"",
     "dev:stripe": "stripe listen --forward-to localhost:3004/webhooks/stripe",
+    "dev:bridge": "node services/bridge/index.js",
     "dev:gateway": "npm run dev --workspace=api-gateway",
     "dev:user": "npm run dev --workspace=user-service",
     "dev:concert": "npm run dev --workspace=concert-service",
