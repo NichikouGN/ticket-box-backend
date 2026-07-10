@@ -21,7 +21,7 @@ app.use("/checkin", checkinRoutes);
 
 await waitForRedisReady(redis);
 
-app.listen(PORT, async () => {
+app.listen(PORT, "0.0.0.0", async () => {
   await createPaymentWorker();
   console.log(`Ticket Service listening on ${PORT}`);
 });

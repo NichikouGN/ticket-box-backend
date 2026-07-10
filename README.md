@@ -25,6 +25,13 @@ For starting the application, please refer to the [Getting Started](docs/getting
 
 ## Changelog
 
+### v0.8.2: Minor Docker & Supabase Fixes (2026-07-10)
+
+#### Fixes
+
+- Fixed maximum pool connections error by limiting the maximum connections for supabase to 4.
+- Fixed docker-compose.yml and k8s/ticket.yml not overwriting the concert service url.
+
 ### v0.8.1: Minor Changes & Fixes (2026-07-09)
 
 #### New additions

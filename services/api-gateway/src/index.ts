@@ -19,6 +19,6 @@ app.use(routes);
 
 await waitForRedisReady(redis);
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`API Gateway listening on ${PORT}`);
 });

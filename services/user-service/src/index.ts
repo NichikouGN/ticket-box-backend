@@ -23,6 +23,6 @@ app.use((req, res) => {
   res.status(404).json({ message: "Not Found" });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`User Service listening on ${PORT}`);
 });

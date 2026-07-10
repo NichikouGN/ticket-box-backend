@@ -211,6 +211,7 @@ services:
     environment:
       - SERVICE_NAME=ticket-service
       - REDIS_URL=redis://redis:6379
+      - CONCERT_SERVICE_URL=http://concert-service:3000
       - PORT=3000
     env_file:
       - services/ticket-service/.env
