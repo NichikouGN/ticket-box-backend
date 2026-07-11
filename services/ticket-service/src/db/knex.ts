@@ -16,7 +16,7 @@ const db = knex({
     },
     pool: {
       min: 2,
-      max: 8,
+      max: 4,
     },
   },
 });

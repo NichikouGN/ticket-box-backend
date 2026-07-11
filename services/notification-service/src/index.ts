@@ -67,7 +67,7 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Not Found" });
 });
 
-app.listen(PORT, async () => {
+app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Notification Service listening on ${PORT}`);
   await createNotificationWorker();
 });

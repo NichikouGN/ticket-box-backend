@@ -39,7 +39,7 @@ app.use((req, res) => {
 
 await waitForRedisReady(redis);
 
-app.listen(PORT, async () => {
+app.listen(PORT, "0.0.0.0", async () => {
   await createConcertWorker();
   console.log(`Concert Service listening on ${PORT}`);
 });
