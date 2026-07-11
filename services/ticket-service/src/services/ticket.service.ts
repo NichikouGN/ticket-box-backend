@@ -139,6 +139,7 @@ export const TicketService = {
         userId: ticket.userId,
         concertId: ticket.concertId,
         ticketTypeId: ticket.ticketTypeId,
+        status: ticket.status,
       },
       signature: signature.toString("base64"),
     };
