@@ -45,7 +45,6 @@ export const ArtistRepository = {
       .whereIn("ca.bio_status", ["PENDING", "REJECTED"])
       .select("a.id", "a.name");
   },
-
   async linkArtistsToConcert(concertId: string, artistIds: string[]) {
     const dbRecords = artistIds.map((artistId) => ({
       concert_id: concertId,

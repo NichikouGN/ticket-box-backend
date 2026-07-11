@@ -43,6 +43,7 @@ async function startOutboxRelay() {
     try {
       switch (outboxRow.event_type) {
         case "CREATE_PAYMENT":
+          console.log("Relaying GENERATE_ARTIST_BIOS event to BullMQ:", outboxRow.payload);
           await paymentQueue.add("CREATE_PAYMENT", outboxRow.payload, {
             attempts: 3,
             backoff: { type: "exponential", delay: 3_000 },

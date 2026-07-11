@@ -24,7 +24,7 @@
     "relay:concert": "npm run relay --workspace=concert-service",
     "cron:order": "npm run cron --workspace=order-service",
     "cron:payment": "npm run cron --workspace=payment-service",
-    "cron:notification": "npm run cron:outbox --workspace=notification-service",
+    "cron:notification": "npm run cron:notification --workspace=notification-service",
     "cron:reminder": "npm run cron:reminder --workspace=concert-service"
   },
   "devDependencies": {

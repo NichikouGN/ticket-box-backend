@@ -13,7 +13,7 @@ export const pdfUploadSchema = z.object({
     fieldname: z.string(),
     originalname: z.string(),
     encoding: z.string(),
-    mimetype: z.literal("application/pdf", "Only PDF files are allowed"),
+    mimetype: z.literal("application/pdf"),
     buffer: z.instanceof(Buffer),
     size: z.number().max(10 * 1024 * 1024, "File size must be less than 10MB"),
   }),

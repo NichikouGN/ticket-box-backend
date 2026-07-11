@@ -27,8 +27,13 @@ For starting the application, please refer to the [Getting Started](docs/getting
 
 ### v0.8.2: Minor Docker & Supabase Fixes (2026-07-10)
 
+#### Changes
+
+- Changed pdf to be stored in dedicated folder instead of holding base64string in outbox table.
+
 #### Fixes
 
+- Fixed npm run cron not working due to wrong naming in package.json.
 - Fixed maximum pool connections error by limiting the maximum connections for supabase to 4.
 - Fixed docker-compose.yml and k8s/ticket.yml not overwriting the concert service url.
 

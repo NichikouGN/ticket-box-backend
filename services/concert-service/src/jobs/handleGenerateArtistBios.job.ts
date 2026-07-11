@@ -1,10 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 import dontenv from "dotenv";
 import { AIResponseSchema } from "../types/artist.types.js";
-import { ConcertRepository } from "../repository/concert.repository.js";
 import { UnrecoverableError } from "bullmq";
 import { ArtistRepository } from "../repository/artist.repository.js";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 dontenv.config();
+
+const uploadDir = path.join(process.cwd(), "uploads");
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || "",
@@ -43,19 +46,34 @@ const artistResponseSchema = {
 export const handleGenerateArtistBios = async (data: {
   concertId: string;
   artistIds: string[];
-  pdfBase64String: string;
+  fileName: string;
   mimeType: string;
 }) => {
   try {
-    const { concertId, artistIds, pdfBase64String, mimeType } = data;
+    console.log("Received data for handleGenerateArtistBios:", data);
 
-    const artists = await ArtistRepository.findArtistForBioGeneration(artistIds, concertId);
+    const { concertId, artistIds, fileName, mimeType } = data;
+
+    const artists = await ArtistRepository.findArtistAndConcertById(concertId, artistIds);
 
     if (!artists || artists.length !== artistIds.length) {
-      const foundArtistIds = new Set(artists.map((artist) => artist.id));
+      const foundArtistIds = new Set(artists.map((artist) => artist));
       const missingArtistIds = artistIds.filter((id) => !foundArtistIds.has(id));
       throw new UnrecoverableError(`The following artist IDs do not exist: ${missingArtistIds.join(", ")}`);
     }
+
+    const candidate = await ArtistRepository.findArtistForBioGeneration(artistIds, concertId);
+
+    if (!candidate || candidate.length != artistIds.length) {
+      const foundCandidateIds = new Set(candidate.map((candidate) => candidate.id));
+      const missingArtistIds = artistIds.filter((id) => !foundCandidateIds.has(id));
+      throw new UnrecoverableError(
+        `The following artist IDs have ai_bio awaiting review: ${missingArtistIds.join(", ")}. Please review them first before generating new bios.`,
+      );
+    }
+
+    const fileBuffer = await readFile(path.join(uploadDir, fileName));
+    const pdfBase64String = fileBuffer.toString("base64");
 
     const response = await ai.models.generateContent({
       model: "gemini-3.1-flash-lite",
@@ -99,6 +117,9 @@ export const handleGenerateArtistBios = async (data: {
     await ArtistRepository.updateArtistAIBios(concertId, matchedArtists);
     console.log("Matched Artists from AI Response:", matchedArtists);
   } catch (error) {
+    if (error instanceof UnrecoverableError) {
+      throw error;
+    }
     console.error("Error in handleGenerateArtistBios:", error);
     throw new Error("Failed to generate artist biographies");
   }

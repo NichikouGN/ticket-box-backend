@@ -27,11 +27,17 @@ async function startOutboxRelay() {
 
   client.on("notification", async (msg) => {
     if (!msg.payload) return;
-    const outboxRow = JSON.parse(msg.payload);
+    const outboxRow = JSON.parse(msg.payload) as {
+      id: string;
+      job_id: string;
+      event_type: string;
+      payload: Object;
+    };
 
     try {
       switch (outboxRow.event_type) {
         case "GENERATE_ARTIST_BIOS":
+          console.log("Relaying GENERATE_ARTIST_BIOS event to BullMQ:", outboxRow.payload);
           await concertQueue.add("GENERATE_ARTIST_BIOS", outboxRow.payload, {
             attempts: 5,
             backoff: {

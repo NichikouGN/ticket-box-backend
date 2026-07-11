@@ -109,9 +109,13 @@ export const ArtistController = {
       const file = validateData.data.file;
       const artistIds = validateData.data.body.artistIds;
       const concertId = parsedParams.data.concertId;
-      const pdfBase64String = file.buffer.toString("base64");
+      const fileBuffer = file.buffer;
 
-      await OrganizerArtistService.generateArtistBios(concertId, artistIds, pdfBase64String, file.mimetype);
+      console.log("Parsed concert ID:", concertId);
+      console.log("Parsed artist IDs:", artistIds);
+      console.log("File details - Name:", file.originalname, "MIME Type:", file.mimetype, "Size:", file.size);
+
+      await OrganizerArtistService.generateArtistBios(concertId, artistIds, fileBuffer, file.mimetype);
 
       return res.status(200).json({
         success: true,

@@ -1,8 +1,13 @@
 import { AppError } from "../types/appError.types.js";
 import { ArtistRepository } from "../repository/artist.repository.js";
 import { OutboxRepository } from "../repository/outbox.repository.js";
-import db from "../db/knex.js";
 import { ConcertRepository } from "../repository/concert.repository.js";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import db from "../db/knex.js";
+
+const uploadDir = path.join(process.cwd(), "uploads");
+await mkdir(uploadDir, { recursive: true });
 
 type ArtistResult = {
   id: string;
@@ -54,7 +59,12 @@ export const OrganizerArtistService = {
     }
   },
 
-  async generateArtistBios(concertId: string, artistIds: string[], pdfBase64String: string, mimeType: string) {
+  async generateArtistBios(
+    concertId: string,
+    artistIds: string[],
+    fileBuffer: Buffer<ArrayBufferLike>,
+    mimeType: string,
+  ) {
     try {
       const [concertExists, artistExists] = await Promise.all([
         ConcertRepository.findConcertById(concertId),
@@ -81,14 +91,18 @@ export const OrganizerArtistService = {
         );
       }
 
+      const fileName = `${crypto.randomUUID()}.pdf`;
+      const filePath = path.join(uploadDir, fileName);
+      await writeFile(filePath, fileBuffer);
+
       await OutboxRepository.createConcertOutboxEvent(
         db,
         "GENERATE_ARTIST_BIOS",
         {
           concertId: concertId,
           artistIds: artistIds,
-          pdfBase64String: pdfBase64String,
           mimeType: mimeType,
+          fileName: fileName,
         },
         300,
       );

@@ -5,9 +5,12 @@ type DB = Knex | Knex.Transaction;
 
 export const OutboxRepository = {
   async createConcertOutboxEvent(db: DB, eventType: string, payload: Object, retryDelay = 30) {
+    console.log("Creating concert outbox event:", { eventType, payload, retryDelay });
+    console.log(JSON.stringify(payload));
     await db("concerts_outbox")
       .insert({
         id: crypto.randomUUID(),
+        job_id: null,
         event_type: eventType,
         payload: JSON.stringify(payload),
         status: "PENDING",
