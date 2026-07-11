@@ -10,10 +10,10 @@ const db = knex({
     ssl: {
       rejectUnauthorized: false,
     },
-    pool: {
-      min: 2,
-      max: 4,
-    },
+  },
+  pool: {
+    min: 2,
+    max: 4,
   },
 });
 
