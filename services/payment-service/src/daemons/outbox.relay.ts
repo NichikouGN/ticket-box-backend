@@ -26,65 +26,86 @@ async function startOutboxRelay() {
   await client.query("LISTEN payments_outbox_channel");
   logger.info("Outbox Relay is actively listening for committed events...");
 
-  client.on("notification", async (msg) => {
-    if (!msg.payload) return;
+  const eventQueue: any[] = [];
+  let processing = false;
 
-    const outboxRow = JSON.parse(msg.payload) as {
-      id: string;
-      job_id: string;
-      event_type: string;
-      payload: Object;
-    };
+  const processNextEvent = async () => {
+    if (processing || eventQueue.length === 0) return;
+    processing = true;
+    const msg = eventQueue.shift();
 
-    logger.info({ eventId: outboxRow.id, eventType: outboxRow.event_type }, "[PAYMENT OUTBOX] Processing outbox event");
-    try {
-      switch (outboxRow.event_type) {
-        case "PAYMENT_CREATED":
-          await orderQueue.add("PAYMENT_CREATED", outboxRow.payload, {
-            attempts: 3,
-            backoff: { type: "exponential", delay: 3_000 },
-            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
-          });
-          break;
-        case "CREATE_PAYMENT_FAILED":
-          await orderQueue.add("CREATE_PAYMENT_FAILED", outboxRow.payload, {
-            attempts: 3,
-            backoff: { type: "exponential", delay: 3_000 },
-            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
-          });
-          break;
-        case "PAYMENT_SUCCESS":
-          await orderQueue.add("PAYMENT_SUCCESS", outboxRow.payload, {
-            attempts: 3,
-            backoff: { type: "exponential", delay: 3_000 },
-            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
-          });
-          break;
-        case "PAYMENT_EXPIRED":
-          await orderQueue.add("PAYMENT_EXPIRED", outboxRow.payload, {
-            attempts: 3,
-            backoff: { type: "exponential", delay: 10_000 },
-            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
-          });
-          break;
-        case "LATE_WEBHOOK_RECEIVED":
-          await paymentQueue.add("LATE_WEBHOOK_RECEIVED", outboxRow.payload, {
-            attempts: 3,
-            backoff: { type: "exponential", delay: 5_000 },
-            ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
-          });
-          break;
-        default:
-          logger.warn({ eventType: outboxRow.event_type }, "Received unknown outbox event type, skipping");
+    if (msg && msg.payload) {
+      let outboxRow: any = null;
+      try {
+        outboxRow = JSON.parse(msg.payload);
+        logger.info({ eventId: outboxRow.id, eventType: outboxRow.event_type }, "[PAYMENT OUTBOX] Processing outbox event");
+
+        switch (outboxRow.event_type) {
+          case "PAYMENT_CREATED":
+            await orderQueue.add("PAYMENT_CREATED", outboxRow.payload, {
+              attempts: 3,
+              backoff: { type: "exponential", delay: 3_000 },
+              ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
+            });
+            break;
+          case "CREATE_PAYMENT_FAILED":
+            await orderQueue.add("CREATE_PAYMENT_FAILED", outboxRow.payload, {
+              attempts: 3,
+              backoff: { type: "exponential", delay: 3_000 },
+              ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
+            });
+            break;
+          case "PAYMENT_SUCCESS":
+            await orderQueue.add("PAYMENT_SUCCESS", outboxRow.payload, {
+              attempts: 3,
+              backoff: { type: "exponential", delay: 3_000 },
+              ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
+            });
+            break;
+          case "PAYMENT_EXPIRED":
+            await orderQueue.add("PAYMENT_EXPIRED", outboxRow.payload, {
+              attempts: 3,
+              backoff: { type: "exponential", delay: 10_000 },
+              ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
+            });
+            break;
+          case "LATE_WEBHOOK_RECEIVED":
+            await paymentQueue.add("LATE_WEBHOOK_RECEIVED", outboxRow.payload, {
+              attempts: 3,
+              backoff: { type: "exponential", delay: 5_000 },
+              ...(outboxRow.job_id ? { jobId: outboxRow.job_id } : {}),
+            });
+            break;
+          default:
+            logger.warn({ eventType: outboxRow.event_type }, "Received unknown outbox event type, skipping");
+        }
+
+        try {
+          await db("payments_outbox").where({ id: outboxRow.id }).update({ status: "PROCESSED" });
+        } catch (dbErr) {
+          logger.error({ err: dbErr }, "[PAYMENT OUTBOX] Failed to update outbox status to PROCESSED in DB");
+        }
+      } catch (err) {
+        logger.error({ err }, "[PAYMENT OUTBOX] Failed to relay message to BullMQ");
+        if (outboxRow && outboxRow.id) {
+          try {
+            await db("payments_outbox")
+              .where({ id: outboxRow.id })
+              .update({ next_retry_at: new Date(Date.now() + 30 * 1000) });
+          } catch (dbErr) {
+            logger.error({ err: dbErr }, "[PAYMENT OUTBOX] Failed to update outbox next_retry_at in DB");
+          }
+        }
       }
-
-      await db("payments_outbox").where({ id: outboxRow.id }).update({ status: "PROCESSED" });
-    } catch (err) {
-      logger.error({ err }, "[PAYMENT OUTBOX] Failed to relay message to BullMQ");
-      await db("payments_outbox")
-        .where({ id: outboxRow.id })
-        .update({ next_retry_at: new Date(Date.now() + 30 * 1000) });
     }
+
+    processing = false;
+    setImmediate(processNextEvent);
+  };
+
+  client.on("notification", (msg) => {
+    eventQueue.push(msg);
+    processNextEvent();
   });
 }
 
