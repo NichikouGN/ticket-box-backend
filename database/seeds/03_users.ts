@@ -24,8 +24,16 @@ export async function seed(knex: Knex): Promise<void> {
     {
       id: "3f2d2f6a-6c2b-4b2f-9c5a-333333333333",
       email: "staff@example.com",
-      password_hash: "hashed_pw_3",
+      password_hash: "$2b$10$Q2ZqVs11dOek3yY8YCJ4x.S9FoktdmIExUJXyhFmSXMApHzFGfa5G",
       full_name: "Le Staff",
+      role: "STAFF",
+      status: "ACTIVE",
+    },
+    {
+      id: "3f2d2f6a-6c2b-4b2f-9c5a-444444444444",
+      email: "staff2@example.com",
+      password_hash: "$2b$10$Q2ZqVs11dOek3yY8YCJ4x.S9FoktdmIExUJXyhFmSXMApHzFGfa5G",
+      full_name: "Nguyen Staff 2",
       role: "STAFF",
       status: "ACTIVE",
     },
