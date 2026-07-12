@@ -25,6 +25,12 @@ For starting the application, please refer to the [Getting Started](docs/getting
 
 ## Changelog
 
+### v0.8.4: Minor Fixes (2026-07-12)
+
+### Fixes
+- Add missing await before db.transaction in `updateConcert` to ensure the database operations complete and the connection remains stable before returning the response.
+- Add missing await before db.transaction in `createConcert` for correctness and to ensure `Redis` keys are populated correctly after the transaction commits.
+
 ### v0.8.3: Minor Changes & Fixes (2026-07-12)
 
 #### Changes

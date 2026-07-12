@@ -24,7 +24,7 @@ export const OrganizerConcertService = {
 
       const concertId = crypto.randomUUID();
 
-      db.transaction(async (trx) => {
+      await db.transaction(async (trx) => {
         await ConcertRepository.createConcert(trx, organizerId, concertId, input);
         ticketTypeResults = await ConcertRepository.createTicketType(trx, concertId, input.ticketTypes);
       });
@@ -64,7 +64,7 @@ export const OrganizerConcertService = {
         throw new AppError("Cannot update a published concert", 400);
       }
 
-      db.transaction(async (trx) => {
+      await db.transaction(async (trx) => {
         await ConcertRepository.updateConcert(trx, concertId, updateData);
 
         if (updateData.ticketTypes) {
