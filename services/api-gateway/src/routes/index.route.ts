@@ -6,6 +6,7 @@ import { checkinProxy, ticketProxy } from "../proxy/tickets.proxy.js";
 import { notificationProxy } from "../proxy/notifications.proxy.js";
 import createTokenBucket from "../middleware/rate_limit.middleware.js";
 import type { Request } from "express";
+import { swaggerDocument } from "../swagger.js";
 
 const router = Router();
 
@@ -80,6 +81,50 @@ router.get("/", (req, res) => {
     service: "API Gateway",
     status: "running",
   });
+});
+
+router.get("/api-docs/swagger.json", (req, res) => {
+  res.json(swaggerDocument);
+});
+
+router.get("/api-docs", (req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Ticket Box - API Documentation</title>
+      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+      <style>
+        body {
+          margin: 0;
+          background: #fafafa;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="swagger-ui"></div>
+      <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" charset="UTF-8"></script>
+      <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
+      <script>
+        window.onload = () => {
+          window.ui = SwaggerUIBundle({
+            url: '/api-docs/swagger.json',
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+              SwaggerUIBundle.presets.apis,
+              SwaggerUIStandalonePreset
+            ],
+            layout: "StandaloneLayout"
+          });
+        };
+      </script>
+    </body>
+    </html>
+  `);
 });
 
 export default router;
