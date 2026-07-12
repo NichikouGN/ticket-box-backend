@@ -25,6 +25,14 @@ For starting the application, please refer to the [Getting Started](docs/getting
 
 ## Changelog
 
+### v0.8.3: Minor Changes & Fixes (2026-07-12)
+
+#### Changes
+
+- ticket status is now included in getTicketById
+- Added timeout for nodemailer to prevent indefinite hanging.
+- Relocate pool size to the root of knex config to prevent max pool size error.
+
 ### v0.8.2: Minor Docker & Supabase Fixes (2026-07-10)
 
 #### Changes
