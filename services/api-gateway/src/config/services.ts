@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 
 export const SERVICES = {
   USER: process.env.USER_SERVICE_URL || "http://localhost:3001",

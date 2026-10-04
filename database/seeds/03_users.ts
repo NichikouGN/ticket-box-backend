@@ -40,9 +40,9 @@ export async function seed(knex: Knex): Promise<void> {
     {
       id: "4af9187e-15dd-4160-aff4-874aec923194",
       email: "nguyennhatkhang2005@gmail.com",
-      password_hash: "$2b$10$Q2ZqVs11dOek3yY8YCJ4x.S9FoktdmIExUJXyhFmSXMApHzFGfa5G",
+      password_hash: "$2b$10$/FrFF1kaUBRq6vrJdRvEv.85PcpkgjA7VBKXhSPRex6jzn7PiboEe",
       full_name: "Nichi",
-      role: "ORGANIZER",
+      role: "AUDIENCE",
       status: "ACTIVE",
     },
   ]);

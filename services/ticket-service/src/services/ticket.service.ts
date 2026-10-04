@@ -5,7 +5,7 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import { concertClient } from "../clients/concert.client.js";
 
-dotenv.config();
+dotenv.config({quiet: true});
 
 const PRIVATE_KEY = process.env.ED25519_PRIVATE_KEY!.replace(/\\n/g, "\n");
 const PUBLIC_KEY = process.env.ED25519_PUBLIC_KEY!.replace(/\\n/g, "\n");
@@ -118,6 +118,7 @@ export const TicketService = {
       userId: string;
       concertId: string;
       ticketTypeId: string;
+      status: string;
     };
     signature: string;
   }> {

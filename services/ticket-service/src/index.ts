@@ -5,7 +5,7 @@ import checkinRoutes from "./routes/checkin.routes.js";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import { redis, waitForRedisReady } from "./clients/redis.client.js";
-dotenv.config();
+dotenv.config({quiet: true});
 
 const app = express();
 const PORT = Number(process.env.PORT || 3005);

@@ -1,6 +1,6 @@
 import axios from "axios";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 
 export const userClient = axios.create({
   baseURL: (process.env.USER_SERVICE_URL || "http://localhost:3001") + "/internal",

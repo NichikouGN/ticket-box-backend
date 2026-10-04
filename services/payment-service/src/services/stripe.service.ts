@@ -59,6 +59,7 @@ export const StripeService = {
   async handleWebhookEvent(event: Stripe.Event) {
     switch (event.type) {
       case "checkout.session.completed": {
+        console.log("[Stripe] Handling checkout.session.completed event:", event.id);
         const session = event.data.object as Stripe.Checkout.Session;
         await this.handleCheckoutSessionCompleted(session);
         break;

@@ -19,11 +19,11 @@ npm install
 
 ```bash
 stripe listen \
-  --api-key sk_test_... \
+  --api-key xxx \
   --forward-to localhost:3004/webhooks/stripe
 ```
 
-With sk_test being your Stripe secret key.
+With xxx being your Stripe secret key.
 
 ## Run the Application For Linux Machine
 

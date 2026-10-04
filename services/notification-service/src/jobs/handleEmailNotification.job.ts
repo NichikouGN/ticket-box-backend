@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import logger from "../utils/logger.js";
 import { buildReminderEmail } from "../utils/buildReminderEmail.util.js";
-dotenv.config();
+dotenv.config({quiet: true});
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;

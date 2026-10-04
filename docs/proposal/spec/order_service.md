@@ -57,7 +57,7 @@ Thiết kế cho các tác vụ Write-Heavy. Sử dụng kiến trúc hướng s
     "order_id": "8b2c6e3c-fa52-474c-83b0-0b6c62bb1e89",
     "total_price": 7000000,
     "payment_deadline": "2026-06-01T10:10:00Z",
-    "payment_url": "https://mock-payment.local/checkout/pay-uuid-9999"
+    "payment_url": "https://mock-payment.local/checkout/pay-uuid-xxx-9999"
   }
 }
 ```

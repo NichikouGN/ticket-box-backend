@@ -3,7 +3,7 @@ import ms from "ms";
 import { AppError } from "../types/appError.types.js";
 import dotenv from "dotenv";
 import type { AuthPayload } from "../types/auth.types.js";
-dotenv.config();
+dotenv.config({quiet: true});
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;

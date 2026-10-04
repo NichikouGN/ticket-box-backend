@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { AppError } from "../types/appError.types.js";
 import type { AuthPayload } from "../types/auth.types.js";
 
-dotenv.config();
+dotenv.config({quiet: true});
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 

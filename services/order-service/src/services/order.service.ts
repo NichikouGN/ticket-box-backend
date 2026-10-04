@@ -18,7 +18,7 @@ import logger from "../utils/logger.js";
 import dotenv from "dotenv";
 import { paymentClient } from "../clients/payment.client.js";
 import { AxiosError } from "axios";
-dotenv.config();
+dotenv.config({quiet: true});
 
 const CLEANUP_WINDOW_MINUTES = parseInt(process.env.CLEANUP_WINDOW_MINUTES || "15");
 const IDEMPOTENCY_TTL_SECONDS = 60 * 60;

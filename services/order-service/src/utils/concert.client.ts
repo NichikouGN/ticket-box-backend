@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { AppError } from "../types/appError.types.js";
 import type { TicketTypeCatalogItem } from "../types/order.types.js";
 
-dotenv.config();
+dotenv.config({quiet: true});
 
 const CONCERT_SERVICE_URL = process.env.CONCERT_SERVICE_URL ?? "http://localhost:3003";
 

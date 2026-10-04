@@ -5,7 +5,7 @@ import { orderQueue } from "../queues/order.queue.js";
 import { paymentQueue } from "../queues/payment.queue.js";
 import logger from "../utils/logger.js";
 
-dotenv.config();
+dotenv.config({quiet: true});
 
 if (!process.env.DB_URL) {
   throw new Error("DB_URL is not defined in environment variables.");
@@ -14,7 +14,7 @@ if (!process.env.DB_URL) {
 async function startOutboxRelay() {
   const client = new pg.Client({
     connectionString: process.env.DB_URL,
-    ssl: { rejectUnauthorized: false },
+    // ssl: { rejectUnauthorized: false },
   });
 
   client.on("error", (err) => {

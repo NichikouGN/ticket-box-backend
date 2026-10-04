@@ -1,6 +1,6 @@
 import axios from "axios";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 
 export const orderClient = axios.create({
   baseURL: (process.env.ORDER_SERVICE_URL || "http://localhost:3003") + "/internal",

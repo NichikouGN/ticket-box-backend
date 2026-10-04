@@ -5,7 +5,7 @@ import type { CreateOrderInput } from "../types/payment.types.js";
 import { PaymentRepository } from "../repository/payment.repository.js";
 import logger from "../utils/logger.js";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 import { StripeService } from "./stripe.service.js";
 
 const PAYMENT_WINDOW_MINUTES = parseInt(process.env.PAYMENT_WINDOW_MINUTES || "15", 10);

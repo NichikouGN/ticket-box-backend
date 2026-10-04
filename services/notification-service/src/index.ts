@@ -5,7 +5,7 @@ import notificationRoutes from "./routes/notification.route.js";
 import type { Response } from "express";
 import dotenv from "dotenv";
 import { redis, waitForRedisReady } from "./clients/redis.client.js";
-dotenv.config();
+dotenv.config({quiet: true});
 
 const app = express();
 const PORT = Number(process.env.PORT || 3006);

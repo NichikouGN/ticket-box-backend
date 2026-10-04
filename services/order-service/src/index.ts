@@ -6,7 +6,7 @@ import { redis } from "./clients/redis.client.js";
 import type { Response } from "express";
 import { createOrderWorker } from "./workers/order.worker.js";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 
 const app = express();
 const PORT = Number(process.env.PORT || 3003);

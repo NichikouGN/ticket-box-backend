@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 
 export const internalAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const apiKey = req.headers["x-internal-api-key"] as string;

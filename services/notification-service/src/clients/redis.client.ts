@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { Redis } from "ioredis";
 
-dotenv.config();
+dotenv.config({quiet: true});
 
 const redisUrl = process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
 

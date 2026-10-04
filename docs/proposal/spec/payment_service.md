@@ -54,7 +54,7 @@ Mock Payment Gateway hỗ trợ 3 kịch bản trong quá trình handshake đầ
     "order_id": "8b2c6e3c-fa52-474c-83b0-0b6c62bb1e89",
     "status": "success",
     "amount": 7000000,
-    "payment_url": "https://mock-payment.local/checkout/pay-uuid-9999",
+    "payment_url": "https://mock-payment.local/checkout/pay-uuid-xxx-9999",
     "payment_ref": "MOCK-TXN-20260715-ABC123",
     "payment_deadline": "2026-07-15T19:15:00Z"
   }

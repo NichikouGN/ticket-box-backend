@@ -5,7 +5,7 @@ import stripeRoutes from "./routes/stripe.routes.js";
 import { createPaymentWorker } from "./workers/payment.worker.js";
 import dotenv from "dotenv";
 import { redis, waitForRedisReady } from "./clients/redis.client.js";
-dotenv.config();
+dotenv.config({quiet: true});
 
 const app = express();
 const PORT = Number(process.env.PORT || 3004);

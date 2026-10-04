@@ -10,7 +10,7 @@
     "dev": "concurrently \"npm:dev:gateway\" \"npm:dev:user\" \"npm:dev:concert\" \"npm:dev:order\" \"npm:dev:payment\" \"npm:dev:ticket\" \"npm:dev:notification\"",
     "relay": "concurrently \"npm:relay:order\" \"npm:relay:payment\" \"npm:relay:notification\" \"npm:relay:concert\"",
     "cron": "concurrently \"npm:cron:order\" \"npm:cron:payment\" \"npm:cron:notification\"",
-    "dev:stripe": "stripe listen --forward-to localhost:3004/webhooks/stripe",
+    "dev:stripe": "stripe listen --forward-to localhost:3004/webhooks/stripe --all-snapshot",
     "dev:gateway": "npm run dev --workspace=api-gateway",
     "dev:user": "npm run dev --workspace=user-service",
     "dev:concert": "npm run dev --workspace=concert-service",
@@ -25,9 +25,19 @@
     "cron:order": "npm run cron --workspace=order-service",
     "cron:payment": "npm run cron --workspace=payment-service",
     "cron:notification": "npm run cron:notification --workspace=notification-service",
-    "cron:reminder": "npm run cron:reminder --workspace=concert-service"
+    "cron:reminder": "npm run cron:reminder --workspace=concert-service",
+    "migrate": "NODE_OPTIONS='--import tsx/esm' npx knex migrate:latest",
+    "seed": "NODE_OPTIONS='--import tsx/esm' npx knex seed:run"
   },
   "devDependencies": {
-    "concurrently": "^10.0.3"
+    "concurrently": "^10.0.3",
+    "tsx": "^4.23.15"
+  },
+  "allowScripts": {
+    "@google/genai@2.10.0": true,
+    "bcrypt@6.0.0": true,
+    "esbuild@0.28.1": true,
+    "msgpackr-extract@3.0.4": true,
+    "protobufjs@7.6.5": true
   }
 }

@@ -1,6 +1,6 @@
 import axios from "axios";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 
 export const concertClient = axios.create({
   baseURL: (process.env.CONCERT_SERVICE_URL || "http://localhost:3002") + "/internal",

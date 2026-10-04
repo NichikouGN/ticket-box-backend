@@ -5,7 +5,7 @@ import morgan from "morgan";
 import userRoutes from "./routes/user.routes.js";
 import internalRoutes from "./routes/internal.routes.js";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);

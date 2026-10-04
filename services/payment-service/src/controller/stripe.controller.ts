@@ -4,7 +4,7 @@ import type { Response, Request } from "express";
 import dotenv from "dotenv";
 import { StripeService } from "../services/stripe.service.js";
 import { AppError } from "../types/appError.types.js";
-dotenv.config();
+dotenv.config({quiet: true});
 
 export const handleWebhook = async (req: Request, res: Response) => {
   const sig = req.headers["stripe-signature"] as string;

@@ -1,7 +1,7 @@
 import { AppError } from "../types/appError.types.js";
 import axios from "axios";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({quiet: true});
 
 export const paymentClient = axios.create({
   baseURL: (process.env.PAYMENT_SERVICE_URL || "http://localhost:3004") + "/internal",
