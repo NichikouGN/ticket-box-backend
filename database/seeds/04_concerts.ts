@@ -12,7 +12,7 @@ export async function seed(knex: Knex): Promise<void> {
         "An unforgettable night featuring live performances from top local and international artists, immersive stage visuals, food vendors, and exclusive fan experiences.",
       venue: "Saigon Riverside Arena",
       event_date: "2026-08-20T18:00:00+07",
-      cover_image: "null",
+      cover_image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQH4-hmpeoFPqvb13R_CmMHqBO90hqP7v6hPuOS-VuOu-sVm6u0tA7IMkU&s=10",
       seat_map_svg_url: "null",
       status: "PUBLISHED",
     },

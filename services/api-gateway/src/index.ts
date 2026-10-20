@@ -7,6 +7,8 @@ import { redis, waitForRedisReady } from "./clients/redis.client.js";
 const app = express();
 const PORT = 3000;
 
+// Hello World
+
 app.use(
   cors({
     origin: "*",

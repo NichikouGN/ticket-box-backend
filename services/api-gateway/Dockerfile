@@ -5,9 +5,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY services/api-gateway/package.json ./services/api-gateway/package.json
 
-RUN npm ci
-
 COPY . .
+
+RUN npm ci
 
 WORKDIR /app/services/api-gateway
 
